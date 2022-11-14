@@ -1,0 +1,11 @@
+/.gradle
+!/.idea
+/.idea/*
+!/.idea/copyright
+!/.idea/scopes
+/build
+/out
+
+/build-logic/.gradle
+/build-logic/build
+/build-logic/out
