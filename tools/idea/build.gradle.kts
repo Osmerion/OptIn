@@ -20,4 +20,8 @@ tasks {
     withType<JavaCompile>().configureEach {
         options.release.set(17)
     }
+
+    buildSearchableOptions {
+        enabled = false
+    }
 }
