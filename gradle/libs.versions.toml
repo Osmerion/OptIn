@@ -1,0 +1,30 @@
+[versions]
+compile-testing = "0.19"
+extra-java-module-info = "1.1"
+gradle-intellij = "1.9.0"
+gradle-toolchain-switches = "0.2.0"
+jsr305 = "3.0.2"
+junit = "5.9.1"
+
+
+[libraries]
+# com.google.code.findbugs:jsr305 - JSR305
+jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+
+# com.google.testing.compile:compile-testing - Compile Testing
+compile-testing = { module = "com.google.testing.compile:compile-testing", version.ref = "compile-testing" }
+
+# org.junit - JUnit
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+
+
+[plugins]
+# io.github.themrmilchmann.gradle.toolchainswitches:gradle-toolchain-switches - Gradle Toolchain Switches Plugin
+gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version.ref = "gradle-toolchain-switches" }
+
+# org.gradlex.extra-java-module-info - Extra Java Module Info Gradle plugin
+extra-java-module-info = { id = "org.gradlex.extra-java-module-info", version.ref = "extra-java-module-info" }
+
+# org.jetbrains.intellij - Gradle IntelliJ Plugin
+intellij = { id = "org.jetbrains.intellij", version.ref = "gradle-intellij" }
