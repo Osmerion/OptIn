@@ -7,7 +7,9 @@ package com.osmerion.optin;
 import java.lang.annotation.*;
 
 /**
- * TODO doc
+ * Explicitly opts into an {@link RequiresOptIn} API.
+ *
+ * <p>TODO doc</p>
  *
  * @since   0.1.0
  *
@@ -32,14 +34,14 @@ import java.lang.annotation.*;
 public @interface OptIn {
 
     /**
-     * TODO doc
+     * {@return the marker annotation of the API to opt into}
      *
      * @since   0.1.0
      */
     Class<?> value();
 
     /**
-     * TODO doc
+     * A container for the {@link Repeatable repeatable} {@link OptIn} annotation.
      *
      * @since   0.1.0
      */
@@ -60,6 +62,11 @@ public @interface OptIn {
     })
     @interface Repeated {
 
+        /**
+         * {@return the {@link OptIn} annotations}
+         *
+         * @since   0.1.0
+         */
         OptIn[] value();
 
     }

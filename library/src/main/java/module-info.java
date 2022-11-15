@@ -3,7 +3,8 @@
  * All rights reserved.
  */
 /**
- * TODO doc
+ * Defines the foundational API for working with APIs that require an
+ * explicit opt-in.
  */
 module com.osmerion.optin {
 
