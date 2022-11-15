@@ -1,0 +1,17 @@
+<!--
+  ~ Copyright (c) 2022 Leon Linhart
+  ~ All rights reserved.
+  -->
+<idea-plugin>
+  <id>com.osmerion.optin</id>
+  <name>OptIn</name>
+  <vendor url="https://osmerion.com">Osmerion</vendor>
+
+  <depends>com.intellij.java</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <annotator language="JAVA" implementationClass="com.osmerion.optin.tools.idea.OptInAnnotator" />
+
+    <dependencySupport coordinate="com.osmerion.optin:optin" kind="java" displayName="OptIn" />
+  </extensions>
+</idea-plugin>
