@@ -38,7 +38,7 @@ public @interface OptIn {
      *
      * @since   0.1.0
      */
-    Class<?> value();
+    Class<? extends Annotation> value();
 
     /**
      * A container for the {@link Repeatable repeatable} {@link OptIn} annotation.
