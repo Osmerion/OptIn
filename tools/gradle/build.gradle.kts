@@ -5,10 +5,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("com.osmerion.java-library-conventions")
+    id("com.osmerion.published-java-library")
     groovy
     `kotlin-dsl`
-    `maven-publish`
 }
 
 kotlin {

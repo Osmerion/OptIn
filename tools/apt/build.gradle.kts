@@ -3,12 +3,23 @@
  * All rights reserved.
  */
 plugins {
-    id("com.osmerion.java-library-conventions")
+    id("com.osmerion.published-java-library")
 }
 
 tasks {
     withType<Test>().configureEach {
         useJUnitPlatform()
+    }
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("mavenJava") {
+            pom {
+                name.set("OptIn Annotation Processor")
+                description.set("An annotation processor which validates opt-in annotation markers at compile-time")
+            }
+        }
     }
 }
 
