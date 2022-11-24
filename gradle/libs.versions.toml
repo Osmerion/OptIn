@@ -1,7 +1,7 @@
 [versions]
 compile-testing = "0.19"
 extra-java-module-info = "1.1"
-gradle-intellij = "1.9.0"
+gradle-intellij = "1.10.0"
 gradle-toolchain-switches = "0.2.0"
 jsr305 = "3.0.2"
 junit = "5.9.1"
