@@ -6,6 +6,7 @@ gradle-toolchain-switches = "0.2.0"
 jsr305 = "3.0.2"
 junit = "5.9.1"
 kotlin = "1.7.21"
+spock = "2.2-groovy-3.0"
 
 
 [libraries]
@@ -22,6 +23,10 @@ kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin
 # org.junit - JUnit
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+
+# org.spockframework - Spock
+spock-bom = { module = "org.spockframework:spock-bom", version.ref = "spock" }
+spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 
 
 [plugins]
