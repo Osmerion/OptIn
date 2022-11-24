@@ -5,20 +5,22 @@
 package com.osmerion.optin.tools.apt;
 
 import com.google.testing.compile.Compiler;
-import com.google.testing.compile.JavaFileObjects;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import javax.tools.JavaFileObject;
 
+import static com.osmerion.optin.tools.apt.StringJavaFileObjectFactory.*;
+
 public abstract class AbstractCompilerTest {
 
     static JavaFileObject jfoOptInMarkerAnnotation;
     static JavaFileObject jfoOptInClass;
+    static JavaFileObject jfoOptInOuterInner;
 
     @BeforeAll
     public static void init() {
-        jfoOptInMarkerAnnotation = JavaFileObjects.forSourceString(
+        jfoOptInMarkerAnnotation = createJavaFileObject(
             "com.example.ExperimentalTestApi",
             """
             package com.example;
@@ -28,13 +30,33 @@ public abstract class AbstractCompilerTest {
             """
         );
 
-        jfoOptInClass = JavaFileObjects.forSourceString(
+        jfoOptInClass = createJavaFileObject(
             "com.example.ExperimentalClass",
             """
             package com.example;
             
             @ExperimentalTestApi
-            public class ExperimentalClass {}
+            public class ExperimentalClass {
+            
+                void call() {}
+                
+                ExperimentalClass self() {
+                    return this;
+                }
+            
+            }
+            """
+        );
+
+        jfoOptInOuterInner = createJavaFileObject(
+            "com.example.StableOuter",
+            """
+            public class StableOuter {
+            
+                @ExperimentalTestApi
+                public class UnstableInner {}
+            
+            }
             """
         );
     }

@@ -5,19 +5,19 @@
 package com.osmerion.optin.tools.apt;
 
 import com.google.testing.compile.Compilation;
-import com.google.testing.compile.JavaFileObjects;
 import org.junit.jupiter.api.Test;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.osmerion.optin.tools.apt.StringJavaFileObjectFactory.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class RecordTest extends AbstractCompilerTest {
 
     @Test
     public void testRecordComponent_UndeclaredOptIn() {
-        JavaFileObject marker = JavaFileObjects.forSourceString(
+        JavaFileObject record = createJavaFileObject(
             "com.example.TestRecord",
             """
             package com.example;
@@ -26,9 +26,8 @@ public final class RecordTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker, jfoOptInMarkerAnnotation, jfoOptInClass);
+        Compilation compilation = compiler.compile(record, jfoOptInMarkerAnnotation, jfoOptInClass);
         assertEquals(Compilation.Status.FAILURE, compilation.status());
-
         assertEquals(1, compilation.diagnostics().size());
 
         Diagnostic<?> diagnostic = compilation.diagnostics().get(0);
@@ -37,7 +36,7 @@ public final class RecordTest extends AbstractCompilerTest {
 
     @Test
     public void testRecordComponent_TypeOptIn() {
-        JavaFileObject marker = JavaFileObjects.forSourceString(
+        JavaFileObject record = createJavaFileObject(
             "com.example.TestRecord",
             """
             package com.example;
@@ -49,13 +48,13 @@ public final class RecordTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker, jfoOptInMarkerAnnotation, jfoOptInClass);
+        Compilation compilation = compiler.compile(record, jfoOptInMarkerAnnotation, jfoOptInClass);
         assertEquals(Compilation.Status.SUCCESS, compilation.status());
     }
 
     @Test
     public void testRecordComponent_TypeExperimental() {
-        JavaFileObject marker = JavaFileObjects.forSourceString(
+        JavaFileObject record = createJavaFileObject(
             "com.example.TestRecord",
             """
             package com.example;
@@ -67,13 +66,13 @@ public final class RecordTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker, jfoOptInMarkerAnnotation, jfoOptInClass);
+        Compilation compilation = compiler.compile(record, jfoOptInMarkerAnnotation, jfoOptInClass);
         assertEquals(Compilation.Status.SUCCESS, compilation.status());
     }
 
     @Test
     public void testRecordComponent_TypeUseOptIn() {
-        JavaFileObject marker = JavaFileObjects.forSourceString(
+        JavaFileObject record = createJavaFileObject(
             "com.example.TestRecord",
             """
             package com.example;
@@ -84,7 +83,7 @@ public final class RecordTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker, jfoOptInMarkerAnnotation, jfoOptInClass);
+        Compilation compilation = compiler.compile(record, jfoOptInMarkerAnnotation, jfoOptInClass);
         assertEquals(Compilation.Status.SUCCESS, compilation.status());
     }
 

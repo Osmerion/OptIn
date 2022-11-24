@@ -38,5 +38,7 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
 
+    testCompileOnly(libs.jetbrains.annotations)
+
     testImplementation(libs.compile.testing)
 }
