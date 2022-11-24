@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 allprojects {
-    group = "com.osmerion.optin"
+    group = "com.osmerion.opt-in"
     version = "0.1.0"
 
     repositories {
