@@ -6,15 +6,23 @@ plugins {
     id("com.osmerion.published-java-library")
 }
 
+val artifactID = "apt"
+
 tasks {
     withType<Test>().configureEach {
         useJUnitPlatform()
+    }
+
+    withType<Jar>().configureEach {
+        archiveBaseName.set(artifactID)
     }
 }
 
 publishing {
     publications {
         named<MavenPublication>("mavenJava") {
+            artifactId = artifactID
+
             pom {
                 name.set("OptIn Annotation Processor")
                 description.set("An annotation processor which validates opt-in annotation markers at compile-time")

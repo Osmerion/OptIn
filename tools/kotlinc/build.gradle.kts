@@ -7,15 +7,23 @@ plugins {
     kotlin("jvm") version "1.7.21"
 }
 
+val artifactID = "kotlin-compiler-plugin"
+
 tasks {
     test {
         useJUnitPlatform()
+    }
+
+    withType<Jar>().configureEach {
+        archiveBaseName.set(artifactID)
     }
 }
 
 publishing {
     publications {
         named<MavenPublication>("mavenJava") {
+            artifactId = artifactID
+
             pom {
                 name.set("OptIn Kotlin Compiler Plugin")
                 description.set("A Kotlin compiler plugin which provides interoperability with Kotlin's opt-in annotation markers")

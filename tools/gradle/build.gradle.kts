@@ -10,6 +10,8 @@ plugins {
     `kotlin-dsl`
 }
 
+val artifactID = "gradle-plugin"
+
 kotlin {
     explicitApi()
 }
@@ -44,6 +46,10 @@ tasks {
         useJUnitPlatform()
 
         javaLauncher.set(project.javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(8)) })
+    }
+
+    withType<Jar>().configureEach {
+        archiveBaseName.set(artifactID)
     }
 }
 
