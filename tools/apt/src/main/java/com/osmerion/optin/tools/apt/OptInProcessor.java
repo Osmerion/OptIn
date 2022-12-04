@@ -42,6 +42,19 @@ public final class OptInProcessor extends AbstractProcessor {
     private static final String REQUIRES_OPT_IN_FQ_NAME = RequiresOptIn.class.getName();
     private static final String KOTLIN_REQUIRES_OPT_IN_FQ_NAME = "kotlin.RequiresOptIn";
 
+    private static final ElementType[] DEFAULT_ANNOTATION_TARGETS = new ElementType[] {
+        ElementType.ANNOTATION_TYPE,
+        ElementType.CONSTRUCTOR,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE,
+        ElementType.METHOD,
+        ElementType.MODULE,
+        ElementType.PACKAGE,
+        ElementType.PARAMETER,
+        ElementType.TYPE,
+        ElementType.TYPE_PARAMETER
+    };
+
     /**
      * TODO
      *
@@ -360,21 +373,16 @@ public final class OptInProcessor extends AbstractProcessor {
                     ElementType.TYPE
                 );
 
-                // TODO Are local variable declarations allowed by default?
                 Target target = element.getAnnotation(Target.class);
+                ElementType[] targets = (target != null) ? target.value() : DEFAULT_ANNOTATION_TARGETS;
+                List<ElementType> invalidTargets = Arrays.stream(targets)
+                    .distinct()
+                    .filter(it -> !validTargets.contains(it))
+                    .toList();
 
-                if (target != null) {
-                    ElementType[] targets = target.value();
-
-                    List<ElementType> invalidTargets = Arrays.stream(targets)
-                        .distinct()
-                        .filter(it -> !validTargets.contains(it))
-                        .toList();
-
-                    if (!invalidTargets.isEmpty()) {
-                        String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
-                        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
-                    }
+                if (!invalidTargets.isEmpty()) {
+                    String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
+                    messager.printMessage(Diagnostic.Kind.ERROR, message, element);
                 }
 
                 // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
