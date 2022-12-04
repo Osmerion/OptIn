@@ -33,6 +33,8 @@ publishing {
 }
 
 extraJavaModuleInfo {
+    failOnMissingModuleInfo.set(false)
+
     automaticModule(libs.jsr305.get().module.toString(), "jsr305")
 }
 
