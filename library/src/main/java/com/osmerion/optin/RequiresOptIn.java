@@ -23,7 +23,7 @@ public @interface RequiresOptIn {
 
     /**
      * {@return the message to be reported on usages of API without an explicit
-     * opt-in, or the empty string for a generated default message.}
+     * opt-in, or the empty string for a generated default message}
      *
      * @since   0.1.0
      */
