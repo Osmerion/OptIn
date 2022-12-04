@@ -26,6 +26,8 @@ tasks {
     test {
         dependsOn(googleCompileTestingClasspath)
 
+        val googleCompileTestingClasspath: FileCollection = googleCompileTestingClasspath
+
         doFirst {
             environment("ENV_FOO" to googleCompileTestingClasspath.asPath)
         }
