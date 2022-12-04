@@ -454,7 +454,7 @@ public final class OptInProcessor extends AbstractProcessor {
             Tree typeTree = tree.getType();
             TypeMirror typeMirror = element.asType();
 
-            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+            List<RequirementMarker> requirementMarkers = typeMirror.accept(typeVisitor, null);
             reportUnsatisfiedRequirements(context, requirementMarkers, typeTree, null);
 
             Tree initializerTree = tree.getInitializer();

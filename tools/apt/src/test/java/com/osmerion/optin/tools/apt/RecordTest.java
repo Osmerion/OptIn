@@ -85,7 +85,7 @@ public final class RecordTest extends AbstractCompilerTest {
             """
             package com.example;
             
-            import com.example.producer.alpha.MarkedClass;
+            import com.example.producer.alpha.*;
             
             public record TestRecord(%s component) {}
             """,
