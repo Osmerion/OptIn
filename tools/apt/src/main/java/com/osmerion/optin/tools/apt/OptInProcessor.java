@@ -1,6 +1,5 @@
 package com.osmerion.optin.tools.apt;
 
-import com.osmerion.optin.OptIn;
 import com.osmerion.optin.RequiresOptIn;
 import com.osmerion.optin.tools.apt.markers.AnnotationMarker;
 import com.osmerion.optin.tools.apt.markers.OptInMarker;
@@ -36,10 +35,10 @@ import java.util.function.BiFunction;
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class OptInProcessor extends AbstractProcessor {
 
-    private static final String OPT_IN_FQ_NAME = OptIn.class.getName();
+    private static final String OPT_IN_FQ_NAME = "com.osmerion.optin.OptIn";
     private static final String KOTLIN_OPT_IN_FQ_NAME = "kotlin.OptIn";
 
-    private static final String REQUIRES_OPT_IN_FQ_NAME = RequiresOptIn.class.getName();
+    private static final String REQUIRES_OPT_IN_FQ_NAME = "com.osmerion.optin.RequiresOptIn";
     private static final String KOTLIN_REQUIRES_OPT_IN_FQ_NAME = "kotlin.RequiresOptIn";
 
     private static final ElementType[] DEFAULT_ANNOTATION_TARGETS = new ElementType[] {
@@ -54,6 +53,16 @@ public final class OptInProcessor extends AbstractProcessor {
         ElementType.TYPE,
         ElementType.TYPE_PARAMETER
     };
+
+    private static EnumSet<ElementType> SUPPORTED_REQUIREMENT_MARKER_TARGETS = EnumSet.of(
+        ElementType.ANNOTATION_TYPE,
+        ElementType.CONSTRUCTOR,
+        ElementType.FIELD,
+        ElementType.METHOD,
+        ElementType.MODULE,
+        ElementType.PACKAGE,
+        ElementType.TYPE
+    );
 
     private Elements elements;
     private Messager messager;
@@ -335,41 +344,71 @@ public final class OptInProcessor extends AbstractProcessor {
 
         @Override
         public Void visitType(TypeElement element, OptInResolverContext context) {
-            // Verify opt-in marker annotations
-            if (element.getKind() == ElementKind.ANNOTATION_TYPE && element.getAnnotation(RequiresOptIn.class) != null) { // TODO Kotlin support
-                /* Prohibit SOURCE retention */
-                Retention retention = element.getAnnotation(Retention.class);
-                RetentionPolicy retentionPolicy = (retention != null) ? retention.value() : RetentionPolicy.CLASS;
+            if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
+                /*
+                 * If the visited type is an annotation interface declaration, we check if the annotation is a
+                 * requirement marker annotation and validate compliance with the specification if necessary.
+                 *
+                 * Specifically, we check
+                 * 1. the annotation's retention, and
+                 * 2. the annotation's targets.
+                 *
+                 * Additionally, while we don't have to check if the annotation is applied twice (javac does that for
+                 * us), we do have to check if both, our and Kotlin's @RequiresOptIn annotation is present.
+                 */
+                boolean foundOsmerionMarker = false, foundKotlinMarker = false;
 
-                if (retentionPolicy != RetentionPolicy.RUNTIME) {
-                    String message = "@RequiresOptIn marker annotation must be used with RUNTIME retention";
-                    messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+                    String annotationFqName = annotationMirror.getAnnotationType().toString();
+
+                    switch (annotationFqName) {
+                        case REQUIRES_OPT_IN_FQ_NAME -> foundOsmerionMarker = true;
+                        case KOTLIN_REQUIRES_OPT_IN_FQ_NAME -> {
+                            foundKotlinMarker = true;
+
+                            messager.printMessage(
+                                Diagnostic.Kind.WARNING,
+                                """
+                                Kotlin's "kotlin.RequiresOptIn" should not be used in Java code. Use "com.osmerion.optin.RequiresOptIn" instead.
+                                """,
+                                element,
+                                annotationMirror
+                            );
+                        }
+                        default -> {
+                            /* Not a requirement marker. Moving on... */
+                            continue;
+                        }
+                    }
+
+                    /* 1. Require RUNTIME retention */
+                    Retention retention = element.getAnnotation(Retention.class);
+                    RetentionPolicy retentionPolicy = (retention != null) ? retention.value() : RetentionPolicy.CLASS;
+
+                    if (retentionPolicy != RetentionPolicy.RUNTIME) {
+                        String message = "@RequiresOptIn marker annotation must be used with RUNTIME retention";
+                        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                    }
+
+                    /* 2. Validate targets */
+                    Target target = element.getAnnotation(Target.class);
+                    ElementType[] targets = (target != null) ? target.value() : DEFAULT_ANNOTATION_TARGETS;
+                    List<ElementType> invalidTargets = Arrays.stream(targets)
+                        .distinct()
+                        .filter(it -> !SUPPORTED_REQUIREMENT_MARKER_TARGETS.contains(it))
+                        .toList();
+
+                    if (!invalidTargets.isEmpty()) {
+                        String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
+                        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                    }
+
+                    // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
                 }
 
-                /* Validate supported targets */
-                EnumSet<ElementType> validTargets = EnumSet.of(
-                    ElementType.ANNOTATION_TYPE,
-                    ElementType.CONSTRUCTOR,
-                    ElementType.FIELD,
-                    ElementType.METHOD,
-                    ElementType.MODULE,
-                    ElementType.PACKAGE,
-                    ElementType.TYPE
-                );
-
-                Target target = element.getAnnotation(Target.class);
-                ElementType[] targets = (target != null) ? target.value() : DEFAULT_ANNOTATION_TARGETS;
-                List<ElementType> invalidTargets = Arrays.stream(targets)
-                    .distinct()
-                    .filter(it -> !validTargets.contains(it))
-                    .toList();
-
-                if (!invalidTargets.isEmpty()) {
-                    String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
-                    messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                if (foundOsmerionMarker && foundKotlinMarker) {
+                    messager.printMessage(Diagnostic.Kind.WARNING, "Both annotations present"); // TODO message
                 }
-
-                // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
             }
 
             List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
