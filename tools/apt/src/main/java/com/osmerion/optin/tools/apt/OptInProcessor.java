@@ -55,22 +55,6 @@ public final class OptInProcessor extends AbstractProcessor {
         ElementType.TYPE_PARAMETER
     };
 
-    /**
-     * TODO
-     *
-     * @param
-     *
-     * @return
-     */
-    private static boolean isOptInRequirementMarker(TypeMirror mirror) {
-        return mirror.getAnnotationMirrors().stream().anyMatch(annotationMirror -> {
-            DeclaredType annotationType = annotationMirror.getAnnotationType();
-            String annotationFqName = annotationType.toString();
-
-            return REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName) || KOTLIN_REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName);
-        });
-    }
-
     private Elements elements;
     private Messager messager;
     private Trees trees;
