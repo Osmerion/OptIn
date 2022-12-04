@@ -7,7 +7,12 @@ plugins {
     alias(libs.plugins.extra.java.module.info)
 }
 
-val artifactID = "apt"
+val artifactID = "tools-apt"
+
+val googleCompileTestingClasspath = configurations.create("googleCompileTestingClasspath") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
 
 tasks {
     withType<Test>().configureEach {
@@ -16,6 +21,14 @@ tasks {
 
     withType<Jar>().configureEach {
         archiveBaseName.set(artifactID)
+    }
+
+    test {
+        dependsOn(googleCompileTestingClasspath)
+
+        doFirst {
+            environment("ENV_FOO" to googleCompileTestingClasspath.asPath)
+        }
     }
 }
 
@@ -44,9 +57,13 @@ dependencies {
     compileOnly(libs.jsr305)
 
     testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
     testRuntimeOnly(libs.junit.jupiter.engine)
 
     testCompileOnly(libs.jetbrains.annotations)
 
     testImplementation(libs.compile.testing)
+
+    googleCompileTestingClasspath(projects.library)
+    googleCompileTestingClasspath(projects.sandbox.modules.producerAlpha)
 }

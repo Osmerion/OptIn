@@ -3,5 +3,7 @@ plugins {
 }
 
 dependencies {
-    compileOnlyApi("com.osmerion.optin:optin:0.1.0")
+    compileOnlyApi(projects.library)
+
+    annotationProcessor(projects.tools.apt)
 }
