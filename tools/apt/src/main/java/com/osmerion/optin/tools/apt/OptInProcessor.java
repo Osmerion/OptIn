@@ -368,6 +368,7 @@ public final class OptInProcessor extends AbstractProcessor {
             List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
             context = context.withMarkers(markers);
 
+            // TODO document that this should never be passed to the tree
             VariableTree tree = (VariableTree) trees.getTree(element);
             Tree typeTree = tree.getType();
             TypeMirror typeMirror = element.asType();
@@ -375,7 +376,8 @@ public final class OptInProcessor extends AbstractProcessor {
             List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
             reportUnsatisfiedRequirements(context, requirementMarkers, typeTree, null);
 
-            // TODO document that this should never be passed to the tree
+            Tree initializerTree = tree.getInitializer();
+            if (initializerTree != null) initializerTree.accept(treeVisitor, context);
 
             return super.visitVariable(element, context);
         }
