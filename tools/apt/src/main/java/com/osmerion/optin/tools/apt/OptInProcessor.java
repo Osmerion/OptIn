@@ -2,24 +2,26 @@ package com.osmerion.optin.tools.apt;
 
 import com.osmerion.optin.OptIn;
 import com.osmerion.optin.RequiresOptIn;
+import com.osmerion.optin.tools.apt.markers.AnnotationMarker;
+import com.osmerion.optin.tools.apt.markers.OptInMarker;
+import com.osmerion.optin.tools.apt.markers.RequirementMarker;
 import com.sun.source.tree.*;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 
+import javax.annotation.Nullable;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.lang.model.util.AbstractTypeVisitor14;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
+import javax.lang.model.util.SimpleTypeVisitor14;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * TODO doc
@@ -30,13 +32,36 @@ import java.util.*;
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class OptInProcessor extends AbstractProcessor {
 
+    private static final String OPT_IN_FQ_NAME = OptIn.class.getName();
+    private static final String KOTLIN_OPT_IN_FQ_NAME = "kotlin.OptIn";
+
+    private static final String REQUIRES_OPT_IN_FQ_NAME = RequiresOptIn.class.getName();
+    private static final String KOTLIN_REQUIRES_OPT_IN_FQ_NAME = "kotlin.RequiresOptIn";
+
+    /**
+     * TODO
+     *
+     * @param
+     *
+     * @return
+     */
+    private static boolean isOptInRequirementMarker(TypeMirror mirror) {
+        return mirror.getAnnotationMirrors().stream().anyMatch(annotationMirror -> {
+            DeclaredType annotationType = annotationMirror.getAnnotationType();
+            String annotationFqName = annotationType.toString();
+
+            return REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName) || KOTLIN_REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName);
+        });
+    }
+
     private Elements elements;
     private Messager messager;
     private Trees trees;
+    private Types types;
 
-    private OptInElementVisitor elementVisitor;
-    private OptInTreeVisitor treeVisitor;
-    private OptInTypeVisitor typeVisitor;
+    private OptInElementVisitor2 elementVisitor;
+    private OptInTreeVisitor2 treeVisitor;
+    private OptInTypeVisitor2 typeVisitor;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -44,10 +69,11 @@ public final class OptInProcessor extends AbstractProcessor {
         this.elements = processingEnv.getElementUtils();
         this.messager = processingEnv.getMessager();
         this.trees = Trees.instance(processingEnv);
+        this.types = processingEnv.getTypeUtils();
 
-        this.elementVisitor = new OptInElementVisitor();
-        this.treeVisitor = new OptInTreeVisitor();
-        this.typeVisitor = new OptInTypeVisitor();
+        this.elementVisitor = new OptInElementVisitor2();
+        this.treeVisitor = new OptInTreeVisitor2();
+        this.typeVisitor = new OptInTypeVisitor2();
     }
 
     @Override
@@ -58,14 +84,18 @@ public final class OptInProcessor extends AbstractProcessor {
             OptInResolverContext optInResolver = new OptInResolverContext() {
 
                 @Override
+                public CompilationUnitTree getCompilationUnit() {
+                    return rootPath.getCompilationUnit();
+                }
+
+                @Override
                 public TreePath getPath(Tree tree) {
                     return TreePath.getPath(rootPath, tree);
                 }
 
                 @Override
-                public boolean isAccepted(String fqName, Element target) {
-                    // TODO respect options
-                    return false;
+                public boolean isSatisfied(RequirementMarker marker, @Nullable Object target) {
+                    return false; // TODO CLI args
                 }
 
             };
@@ -76,483 +106,464 @@ public final class OptInProcessor extends AbstractProcessor {
         return false;
     }
 
-    /**
-     * TODO doc
-     *
-     * @param element
-     * @return
-     */
-    private List<AcceptedOptionality> collectAcceptedOptionalities(Element element) {
-        return collectAcceptedOptionalities(element.getAnnotationMirrors(), null);
-    }
-
-    /**
-     * TODO doc
-     *
-     * @param element
-     * @return
-     */
-    private List<AcceptedOptionality> collectAndBindAcceptedOptionalities(Element element) {
-        return collectAcceptedOptionalities(element.getAnnotationMirrors(), element);
-    }
-
-    /**
-     * TODO doc
-     *
-     * @param typeMirror
-     *
-     * @return
-     */
-    private List<AcceptedOptionality> collectAcceptedOptionalities(TypeMirror typeMirror) {
-        return collectAcceptedOptionalities(typeMirror.getAnnotationMirrors(), null);
-    }
-
-    /**
-     * TODO doc
-     *
-     * @param annotationMirrors
-     * @return
-     */
-    private List<AcceptedOptionality> collectAcceptedOptionalities(List<? extends AnnotationMirror> annotationMirrors, Element binder) {
-        List<AcceptedOptionality> optionalities = new ArrayList<>(annotationMirrors.size() / 4);
-
-        for (AnnotationMirror annotationMirror : annotationMirrors) {
-            AcceptedOptionality optionality = resolveAcceptedOptionalityFromOptIn(annotationMirror, binder);
-            if (optionality != null) {
-                optionalities.add(optionality);
-                continue;
-            }
-
-            Element annotationDeclaration = annotationMirror.getAnnotationType().asElement();
-            optionality = resolveAcceptedOptionalityFromMarker(annotationDeclaration, binder);
-            if (optionality != null) optionalities.add(optionality);
-        }
-
-        return optionalities;
-    }
-
-    /**
-     * TODO doc
-     *
-     * @param element
-     *
-     * @return
-     */
-    private List<RequiredOptionality> collectRequiredOptionalities(Element element) {
-        List<RequiredOptionality> optionalities = new ArrayList<>();
-
-        do {
-            for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-                Element annotationDeclaration = annotationMirror.getAnnotationType().asElement();
-                RequiredOptionality optionality = resolvedRequiredOptionalityFromMarker(annotationDeclaration);
-                if (optionality != null) optionalities.add(optionality);
-            }
-
-            element = element.getEnclosingElement();
-        } while (element != null);
-
-        return optionalities;
-    }
-
-    /**
-     * Resolves and {@return the {@link AcceptedOptionality} from the given {@code element}}.
-     *
-     * <p>This method does not verify that the given {@code element} is a proper
-     * opt-in marker.</p>
-     *
-     * @param element   the element which might represent an opt-in marker
-     */
-    private AcceptedOptionality resolveAcceptedOptionalityFromMarker(Element element, Element binder) {
-        RequiresOptIn requiresOptIn = element.getAnnotation(RequiresOptIn.class);
-        if (requiresOptIn == null) return null;
-
-        String fqName = element.asType().toString();
-        return new AcceptedOptionality(fqName, binder);
-    }
-
-    /**
-     * Resolves and {@return the {@link AcceptedOptionality} from the given {@code element}}.
-     *
-     * <p>If the given {@code mirror} represents an {@link OptIn} annotation,
-     * an additional check is performed to validate that the passed value is a
-     * valid opt-in marker.</p>
-     *
-     * @param mirror    the mirror which might represent an {@link OptIn} annotation
-     */
-    private AcceptedOptionality resolveAcceptedOptionalityFromOptIn(AnnotationMirror mirror, Element binder) {
+    @Nullable
+    private OptInMarker deriveOptInMarker(AnnotationMirror mirror, @Nullable Object binder) {
         String annotationFqName = mirror.getAnnotationType().toString();
-        if (!"com.osmerion.optin.OptIn".equals(annotationFqName)) return null;
+
+        BiFunction<String, Object, OptInMarker> markerFactory;
+        String markerClassValueName;
+
+        if (OPT_IN_FQ_NAME.equals(annotationFqName)) {
+            markerFactory = OptInMarker.JavaOptInMarker::new;
+            markerClassValueName = "value";
+        } else if (KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
+            markerFactory = OptInMarker.KotlinOptInMarker::new;
+            markerClassValueName = "markerValue";
+        } else {
+            return null;
+        }
 
         Map<? extends ExecutableElement, ? extends AnnotationValue> values = elements.getElementValuesWithDefaults(mirror);
 
         AnnotationValue markerValue = values.entrySet().stream()
-            .filter(entry -> "value".contentEquals(entry.getKey().getSimpleName()))
+            .filter(entry -> markerClassValueName.contentEquals(entry.getKey().getSimpleName()))
             .findAny()
             .orElseThrow()
             .getValue();
 
         TypeMirror markerTypeMirror = ((TypeMirror) markerValue.getValue());
-        verifyMarker(markerTypeMirror);
-
-        return new AcceptedOptionality(markerTypeMirror.toString(), binder);
+        return markerFactory.apply(markerTypeMirror.toString(), binder);
     }
 
-    /**
-     * Resolves and {@return the {@link RequiredOptionality} from the given {@code element}}.
-     *
-     * <p>This method does not verify that the given {@code element} is a proper
-     * opt-in marker.</p>
-     *
-     * @param element   the element which might represent an opt-in marker
-     */
-    private RequiredOptionality resolvedRequiredOptionalityFromMarker(Element element) {
-        RequiresOptIn requiresOptIn = element.getAnnotation(RequiresOptIn.class);
+    @Nullable
+    private RequirementMarker deriveRequirementMarker(AnnotationMirror mirror) {
+        DeclaredType annotationType = mirror.getAnnotationType();
+        Element annotationTypeElement = annotationType.asElement();
+
+        // TODO Kotlin support
+
+        RequiresOptIn requiresOptIn = annotationTypeElement.getAnnotation(RequiresOptIn.class);
         if (requiresOptIn == null) return null;
 
-        String fqName = element.asType().toString();
-        return new RequiredOptionality(fqName, requiresOptIn.message(), requiresOptIn.level());
+        String annotationFqName = annotationType.toString();
+        return new RequirementMarker.JavaRequirementMarker(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
     }
 
-    private void reportNotAcceptedOptionalities(
-        OptInResolverContext resolver,
-        List<RequiredOptionality> requiredOptionalities,
-        Element owner
-    ) {
-        reportNotAcceptedOptionalities(resolver, requiredOptionalities, owner, null, null);
+    private List<AnnotationMarker> collectAnnotationMarkers(Element element, @Nullable Object binder) {
+        List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
+        List<AnnotationMarker> markers = new ArrayList<>();
+
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
+            AnnotationMarker marker = deriveOptInMarker(annotationMirror, binder);
+            if (marker != null) {
+                markers.add(marker);
+                continue;
+            }
+
+            marker = deriveRequirementMarker(annotationMirror);
+            if (marker != null) markers.add(marker);
+        }
+
+        return List.copyOf(markers);
     }
 
-    private void reportNotAcceptedOptionalities(
-        OptInResolverContext resolver,
-        List<RequiredOptionality> requiredOptionalities,
-        Tree owner,
-        Element target
+    private List<OptInMarker> collectOptInMarkers(TypeMirror mirror) {
+        List<? extends AnnotationMirror> annotationMirrors = mirror.getAnnotationMirrors();
+        List<OptInMarker> markers = new ArrayList<>(annotationMirrors.size() / 4);
+
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
+            OptInMarker marker = deriveOptInMarker(annotationMirror, null);
+            if (marker != null) markers.add(marker);
+        }
+
+        return List.copyOf(markers);
+    }
+
+    private List<RequirementMarker> collectRequirementMarkers(Element element) {
+        return collectAnnotationMarkers(element, null).stream()
+            .map(it -> it instanceof RequirementMarker marker ? marker : null)
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private List<RequirementMarker> collectAllRequirementMarkers(ExecutableElement executableElement) {
+        List<RequirementMarker> markers = new ArrayList<>();
+        Element element = executableElement;
+
+        do {
+            List<RequirementMarker> elementMarkers = collectRequirementMarkers(element);
+            markers.addAll(elementMarkers);
+        } while ((element = element.getEnclosingElement()) != null);
+
+        return List.copyOf(markers);
+    }
+
+    private List<RequirementMarker> collectAllRequirementMarkers(TypeMirror mirror) {
+        if (mirror.getKind() != TypeKind.DECLARED) return List.of();
+
+        DeclaredType type = (DeclaredType) mirror;
+        Element element = type.asElement();
+
+        List<RequirementMarker> markers = new ArrayList<>();
+
+        do {
+            List<RequirementMarker> elementMarkers = collectRequirementMarkers(element);
+            markers.addAll(elementMarkers);
+        } while ((element = element.getEnclosingElement()) != null);
+
+        return List.copyOf(markers);
+    }
+
+    private void reportUnsatisfiedRequirements(
+        OptInResolverContext context,
+        List<RequirementMarker> requirements,
+        Element target,
+        @Nullable Object binder
     ) {
-        // TODO Spec: What to do if an annotation has an opt-in marker annotation and @OptIn?
-        List<RequiredOptionality> notAcceptedOptionalities = requiredOptionalities.stream()
-            .filter(it -> !resolver.isAccepted(it.fqMarkerName(), target))
+        List<RequirementMarker> unsatisfiedMarkers = requirements.stream()
+            .filter(it -> !context.isSatisfied(it, binder))
             .toList();
 
-        for (RequiredOptionality undeclaredOptionality : notAcceptedOptionalities) {
-            Diagnostic.Kind kind = switch (undeclaredOptionality.level()) {
+        for (RequirementMarker marker : unsatisfiedMarkers) {
+            Diagnostic.Kind kind = switch (marker.level()) {
                 case ERROR -> Diagnostic.Kind.ERROR;
                 case WARNING -> Diagnostic.Kind.WARNING;
             };
 
-            // TODO respect the custom message (if set)
-            trees.printMessage(kind,"Undeclared optionality: " + undeclaredOptionality.fqMarkerName(), owner, resolver.getPath(owner).getCompilationUnit());
+            messager.printMessage(kind, "Undeclared optionality: " + marker.fqMarkerName(), target);
         }
     }
 
-    private void reportNotAcceptedOptionalities(
-        OptInResolverContext resolver,
-        List<RequiredOptionality> requiredOptionalities,
-        Element owner,
-        AnnotationMirror annotation
+    private void reportUnsatisfiedRequirements(
+        OptInResolverContext context,
+        List<RequirementMarker> requirements,
+        Tree target,
+        @Nullable Object binder
     ) {
-        reportNotAcceptedOptionalities(resolver, requiredOptionalities, owner, annotation, null);
-    }
-
-    private void reportNotAcceptedOptionalities(
-        OptInResolverContext resolver,
-        List<RequiredOptionality> requiredOptionalities,
-        Element owner,
-        AnnotationMirror annotation,
-        AnnotationValue value
-    ) {
-       // TODO Spec: What to do if an annotation has an opt-in marker annotation and @OptIn?
-        List<RequiredOptionality> notAcceptedOptionalities = requiredOptionalities.stream()
-            .filter(it -> !resolver.isAccepted(it.fqMarkerName(), null))
+        List<RequirementMarker> unsatisfiedMarkers = requirements.stream()
+            .filter(it -> !context.isSatisfied(it, binder))
             .toList();
 
-        for (RequiredOptionality undeclaredOptionality : notAcceptedOptionalities) {
-            Diagnostic.Kind kind = switch (undeclaredOptionality.level()) {
+        for (RequirementMarker marker : unsatisfiedMarkers) {
+            Diagnostic.Kind kind = switch (marker.level()) {
                 case ERROR -> Diagnostic.Kind.ERROR;
                 case WARNING -> Diagnostic.Kind.WARNING;
             };
 
-            // TODO respect the custom message (if set)
-            messager.printMessage(kind, "Undeclared optionality: " + undeclaredOptionality.fqMarkerName(), owner, annotation, value);
+            trees.printMessage(kind, "Undeclared optionality: " + marker.fqMarkerName(), target, context.getCompilationUnit());
         }
     }
 
+    private final class OptInElementVisitor2 extends SimpleElementVisitor14<Void, OptInResolverContext> {
 
+        private List<RequirementMarker> collectAllRequirementsFromOverriddenElements(ExecutableElement element) {
+            Queue<TypeElement> typeElements = new ArrayDeque<>();
 
+            Element enclosingElement = element.getEnclosingElement();
+            if (!(enclosingElement instanceof TypeElement enclosingTypeElement)) return List.of();
 
+            typeElements.add(enclosingTypeElement);
 
+            while (!typeElements.isEmpty()) {
+                TypeElement typeElement = typeElements.poll();
 
+                for (Element enclosedElement : typeElement.getEnclosedElements()) {
+                    if (enclosedElement.getKind() != ElementKind.METHOD) continue;
 
+                    ExecutableElement executableElement = (ExecutableElement) enclosedElement;
 
+                    if (elements.overrides(element, executableElement, enclosingTypeElement)) {
+                        return collectAllRequirementMarkers(executableElement);
+                    }
+                }
 
+                TypeMirror superTypeMirror = typeElement.getSuperclass();
+                if (superTypeMirror.getKind() != TypeKind.NONE) {
+                    Element superElement = types.asElement(superTypeMirror);
+                    if (!(superElement instanceof TypeElement superTypeElement)) throw new IllegalStateException();
 
+                    typeElements.add(superTypeElement);
+                }
 
+                for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
+                    Element interfaceElement = types.asElement(interfaceMirror);
+                    if (!(interfaceElement instanceof TypeElement interfaceTypeElement)) throw new IllegalStateException();
 
+                    typeElements.add(interfaceTypeElement);
+                }
+            }
 
-
-
-    private static void verifyMarker(TypeMirror markerTypeMirror) {
-        boolean isOptInMarker = markerTypeMirror.getAnnotationMirrors().stream().anyMatch(annotationMirror -> {
-            DeclaredType annotationType = annotationMirror.getAnnotationType();
-            String fqName = annotationType.toString();
-
-            return "com.osmerion.optin.RequiresOptIn".equals(fqName);
-        });
-
-        if (!isOptInMarker) {
-//            messager.printMessage(Diagnostic.Kind.ERROR, "", element, mirror, markerValue);
+            return List.of();
         }
-    }
 
-    private final class OptInElementVisitor extends SimpleElementVisitor14<Void, OptInResolverContext> {
+        @Override
+        public Void visitExecutable(ExecutableElement element, OptInResolverContext context) {
+            if (element.getKind() == ElementKind.CONSTRUCTOR) {
+                Element enclosingElement = element.getEnclosingElement();
+                if (enclosingElement != null && enclosingElement.getKind() == ElementKind.RECORD) return null;
+            }
+
+            List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
+            context = context.withMarkers(markers);
+
+            List<RequirementMarker> requirementMarkers = collectAllRequirementsFromOverriddenElements(element);
+            reportUnsatisfiedRequirements(context, requirementMarkers, element, null);
+
+            Tree tree = trees.getTree(element);
+            if (tree != null) tree.accept(treeVisitor, context);
+
+            return null;
+        }
 
 //        @Override
-//        protected Void defaultAction(Element e, OptInResolverContext o) {
-//            List<AcceptedOptionality> optionalities = new ArrayList<>();
+//        public Void visitRecordComponent(RecordComponentElement element, OptInResolverContext context) {
+//            // https://bugs.openjdk.org/browse/JDK-8295184
 //
-//            for (AnnotationMirror mirror : e.getAnnotationMirrors()) {
-//                DeclaredType annotationType = mirror.getAnnotationType();
+//            List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
+//            context = context.withMarkers(markers);
 //
-//                AcceptedOptionality optionality = resolveAcceptedOptionalityFromOptIn(mirror);
-//                if (optionality != null) {
-//                    optionalities.add(optionality);
-//                    continue;
-//                }
+//            TypeMirror typeMirror = element.asType();
+//            markers = collectOptInMarkers(typeMirror);
+//            context = context.withMarkers(markers);
 //
-//                optionality = resolveAcceptedOptionalityFromMarker(annotationType.asElement());
-//                if (optionality != null) optionalities.add(optionality);
-//            }
-//
-//            optionalities = List.copyOf(optionalities);
-////            o = o.withOptionalities(optionalities);
-//
-//            for (Element enclosedElement : e.getEnclosedElements()) {
-//                enclosedElement.accept(this, o);
-//            }
+//            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+//            reportUnsatisfiedRequirements(context, requirementMarkers, element, null);
 //
 //            return null;
 //        }
 
         @Override
-        public Void visitExecutable(ExecutableElement element, OptInResolverContext resolver) {
-            List<AcceptedOptionality> acceptedOptionalities = collectAcceptedOptionalities(element);
-            resolver = resolver.withAcceptedOptionalities(acceptedOptionalities);
+        public Void visitType(TypeElement element, OptInResolverContext context) {
+            List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
+            context = context.withMarkers(markers);
 
-            for (VariableElement parameterElement : element.getParameters()) {
-                acceptedOptionalities = collectAndBindAcceptedOptionalities(parameterElement);
-                resolver = resolver.withAcceptedOptionalities(acceptedOptionalities);
+            ClassTree tree = trees.getTree(element);
 
-                // TODO Support scoping type use annotation optionalities to specific bindings
-                Element parameterTypeElement = processingEnv.getTypeUtils().asElement(parameterElement.asType());
+            TypeMirror superTypeMirror = element.getSuperclass();
+            if (superTypeMirror.getKind() != TypeKind.NONE) {
+                Tree extendsClauseTree = tree.getExtendsClause();
 
-                List<RequiredOptionality> requiredOptionalities = collectRequiredOptionalities(parameterTypeElement);
-                reportNotAcceptedOptionalities(resolver, requiredOptionalities, parameterElement);
-            }
-
-            MethodTree methodTree = trees.getTree(element);
-            if (methodTree != null) methodTree.accept(treeVisitor, resolver);
-
-            element.asType().accept(typeVisitor, resolver);
-
-            return null;
-        }
-
-        @Override
-        public Void visitRecordComponent(RecordComponentElement element, OptInResolverContext resolver) {
-            List<AcceptedOptionality> acceptedOptionalities = collectAcceptedOptionalities(element);
-            resolver = resolver.withAcceptedOptionalities(acceptedOptionalities);
-
-            TypeMirror typeMirror = element.asType();
-            Element componentTypeElement = processingEnv.getTypeUtils().asElement(typeMirror);
-
-            List<RequiredOptionality> declaredOptionalities = collectRequiredOptionalities(componentTypeElement);
-            reportNotAcceptedOptionalities(resolver, declaredOptionalities, element);
-
-            return null;
-        }
-
-        @Override
-        public Void visitType(TypeElement element, OptInResolverContext resolver) {
-            // Verify opt-in marker annotations
-            if (element.getKind() == ElementKind.ANNOTATION_TYPE && element.getAnnotation(RequiresOptIn.class) != null) {
-                /* Prohibit SOURCE retention */
-                Retention retention = element.getAnnotation(Retention.class);
-                RetentionPolicy retentionPolicy = (retention != null) ? retention.value() : RetentionPolicy.CLASS;
-
-                if (retentionPolicy == RetentionPolicy.SOURCE) {
-                    String message = "@RequiresOptIn marker annotation cannot be used with SOURCE retention";
-                    messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                if (extendsClauseTree != null) {
+                    extendsClauseTree.accept(treeVisitor, context);
                 }
-
-                /* Validate supported targets */
-                EnumSet<ElementType> validTargets = EnumSet.of(
-                    ElementType.ANNOTATION_TYPE,
-                    ElementType.CONSTRUCTOR,
-                    ElementType.FIELD,
-                    ElementType.METHOD,
-                    ElementType.MODULE,
-                    ElementType.PACKAGE,
-                    ElementType.TYPE
-                );
-
-                Target target = element.getAnnotation(Target.class);
-
-                if (target != null) {
-                    ElementType[] targets = target.value();
-
-                    List<ElementType> invalidTargets = Arrays.stream(targets)
-                        .distinct()
-                        .filter(it -> !validTargets.contains(it))
-                        .toList();
-
-                    if (!invalidTargets.isEmpty()) {
-                        String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
-                        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
-                    }
-                }
-
-                // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
             }
 
-            List<AcceptedOptionality> optionalities = collectAcceptedOptionalities(element);
-            resolver = resolver.withAcceptedOptionalities(optionalities);
-
-            /*
-             * Verify super-types and permitted subclasses
-             */
-            TypeMirror superClassMirror = element.getSuperclass();
-            verifySuperTypeOrPermittedSubclass(element, superClassMirror, resolver);
-
-            for (TypeMirror interfaceMirror : element.getInterfaces()) {
-                verifySuperTypeOrPermittedSubclass(element, interfaceMirror, resolver);
+            for (Tree interfaceTree : tree.getImplementsClause()) {
+                interfaceTree.accept(treeVisitor, context);
             }
 
-            for (TypeMirror permittedSubclassMirror : element.getPermittedSubclasses()) {
-                verifySuperTypeOrPermittedSubclass(element, permittedSubclassMirror, resolver);
+            for (Tree permittedSubclassTree : tree.getPermitsClause()) {
+                permittedSubclassTree.accept(treeVisitor, context);
             }
-
-            // TODO type parameters
-            element.asType().accept(typeVisitor, resolver);
-
 
             for (Element enclosedElement : element.getEnclosedElements()) {
-                enclosedElement.accept(this, resolver);
+                enclosedElement.accept(this, context);
             }
 
             return null;
         }
 
-        private void verifySuperTypeOrPermittedSubclass(Element owner, TypeMirror typeMirror, OptInResolverContext resolver) {
-            List<AcceptedOptionality> acceptedOptionalities = collectAcceptedOptionalities(typeMirror);
-            resolver = resolver.withAcceptedOptionalities(acceptedOptionalities);
+        @Override
+        public Void visitVariable(VariableElement element, OptInResolverContext context) {
+            List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
+            context = context.withMarkers(markers);
 
-            processingEnv.getTypeUtils().asElement(typeMirror);
+            VariableTree tree = (VariableTree) trees.getTree(element);
+            Tree typeTree = tree.getType();
+            TypeMirror typeMirror = element.asType();
 
-            List<RequiredOptionality> declaredOptionalities = collectRequiredOptionalities(owner);
+            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+            reportUnsatisfiedRequirements(context, requirementMarkers, typeTree, null);
 
-            // TODO
+            // TODO document that this should never be passed to the tree
+
+            return super.visitVariable(element, context);
         }
 
     }
 
-    private final class OptInTreeVisitor extends TreeScanner<Void, OptInResolverContext> {
+    private final class OptInTreeVisitor2 extends TreeScanner<OptInResolverContext, OptInResolverContext> {
 
+        @Nullable
         @Override
-        public Void visitIdentifier(IdentifierTree node, OptInResolverContext resolver) {
-            TreePath path = resolver.getPath(node);
-            Element element = trees.getElement(path);
+        public OptInResolverContext scan(@Nullable Tree tree, @Nullable OptInResolverContext context) {
+            if (tree == null) return context;
 
-            List<RequiredOptionality> requiredOptionalities = collectRequiredOptionalities(element);
-            reportNotAcceptedOptionalities(resolver, requiredOptionalities, node, element);
+            OptInResolverContext res = tree.accept(this, context);
+            return res != null ? res : context;
+        }
 
-            return super.visitIdentifier(node, resolver);
+        @Nullable
+        private OptInResolverContext scanAndReduce(Tree node, @Nullable OptInResolverContext p, @Nullable OptInResolverContext r) {
+            return reduce(scan(node, p), r);
+        }
+
+        @Nullable
+        @Override
+        public OptInResolverContext scan(@Nullable Iterable<? extends Tree> nodes, OptInResolverContext context) {
+            if (nodes != null) {
+                boolean first = true;
+
+                for (Tree node : nodes) {
+                    context = (first ? scan(node, context) : scanAndReduce(node, context, context));
+                    first = false;
+                }
+            }
+
+            return context;
+        }
+
+        @Nullable
+        @Override
+        public OptInResolverContext reduce(@Nullable OptInResolverContext r1, @Nullable OptInResolverContext r2) {
+            return (r2 == null) ? r1 : ((r1 == null) ? r2 : r1.mergedWith(r2));
         }
 
         @Override
-        public Void visitMemberSelect(MemberSelectTree node, OptInResolverContext resolver) {
-            TreePath path = resolver.getPath(node);
-            Element element = trees.getElement(path);
+        public OptInResolverContext visitAnnotatedType(AnnotatedTypeTree node, OptInResolverContext context) {
+            TreePath path = context.getPath(node);
+            TypeMirror typeMirror = trees.getTypeMirror(path);
 
-            List<RequiredOptionality> requiredOptionalities = collectRequiredOptionalities(element);
-            reportNotAcceptedOptionalities(resolver, requiredOptionalities, node, element);
+            List<OptInMarker> markers = collectOptInMarkers(typeMirror);
+            context = context.withMarkers(markers);
 
-            return super.visitMemberSelect(node, resolver);
+            return super.visitAnnotatedType(node, context);
         }
 
         @Override
-        public Void visitMethod(MethodTree node, OptInResolverContext resolver) {
-            scan(node.getModifiers(), resolver);
-            scan(node.getReturnType(), resolver);
-            scan(node.getTypeParameters(), resolver);
-//            scan(node.getParameters(), resolver);
-            scan(node.getReceiverParameter(), resolver);
-            scan(node.getThrows(), resolver);
-            scan(node.getBody(), resolver);
-            scan(node.getDefaultValue(), resolver);
+        public OptInResolverContext visitBlock(BlockTree node, OptInResolverContext context) {
+            super.visitBlock(node, context);
+            return context;
+        }
 
-            return null;
+        @Override
+        public OptInResolverContext visitClass(ClassTree node, OptInResolverContext context) {
+            Element element = trees.getElement(context.getPath(node));
+            element.accept(elementVisitor, context);
+
+            return context;
+        }
+
+        @Override
+        public OptInResolverContext visitIdentifier(IdentifierTree node, OptInResolverContext context) {
+            Element element = trees.getElement(context.getPath(node));
+
+            if (element != null) {
+                TypeMirror typeMirror = element.asType();
+                List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+                reportUnsatisfiedRequirements(context, requirementMarkers, node, element);
+            }
+
+            return context;
+        }
+
+        @Override
+        public OptInResolverContext visitMemberSelect(MemberSelectTree node, OptInResolverContext context) {
+            context = super.visitMemberSelect(node, context);
+
+            TreePath path = context.getPath(node);
+            TypeMirror typeMirror = trees.getTypeMirror(path);
+
+            // type contagiousness
+            if (typeMirror != null) {
+                List<RequirementMarker> requirementMarkers = typeMirror.accept(typeVisitor, null);
+                reportUnsatisfiedRequirements(context, requirementMarkers, node, null); // TODO binder
+
+
+            }
+
+
+            // type contagiousness
+//            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+
+
+//            List<? extends AnnotationMarker> markers = collectOptInMarkers(typeMirror);
+//            context = context.withMarkers(markers);
+//
+//            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+//            reportUnsatisfiedRequirements(context, requirementMarkers, node, null);
+//
+//            OptInResolverContext finalContext = context;
+//            List<RequirementMarker> unsatisfiedMarkers = requirementMarkers.stream()
+//                .filter(it -> !finalContext.isSatisfied(it, null))
+//                .toList();
+
+            return context;
+        }
+
+        @Override
+        public OptInResolverContext visitMethodInvocation(MethodInvocationTree node, OptInResolverContext context) {
+            TreePath path = context.getPath(node);
+            TypeMirror typeMirror = trees.getTypeMirror(path);
+
+            // type contagiousness
+            if (typeMirror != null) {
+                List<RequirementMarker> requirementMarkers = typeMirror.accept(typeVisitor, null);
+                reportUnsatisfiedRequirements(context, requirementMarkers, node, null);
+            }
+
+            // TODO flow typing
+
+            return super.visitMethodInvocation(node, context);
+        }
+
+        @Override
+        public OptInResolverContext visitVariable(VariableTree node, OptInResolverContext context) {
+            // TODO It might be a good idea to guard against non-local variables here
+            TreePath path = context.getPath(node);
+            Element element = trees.getElement(context.getPath(node));
+
+            List<AnnotationMarker> unboundMarkers = collectAnnotationMarkers(element, null);
+            OptInResolverContext nestedContext = context.withMarkers(unboundMarkers);
+            super.visitVariable(node, nestedContext);
+
+            List<AnnotationMarker> markers = collectAnnotationMarkers(element, element);
+            context = context.withMarkers(markers);
+
+//            TypeMirror typeMirror = element.asType();
+//            List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+//
+//            // This does not print properly for "var" variables
+//            reportUnsatisfiedRequirements(context, requirementMarkers, node.getType(), element);
+
+            return context;
         }
 
     }
 
-    private final class OptInTypeVisitor extends AbstractTypeVisitor14<Void, OptInResolverContext> {
+    private final class OptInTypeVisitor2 extends SimpleTypeVisitor14<List<RequirementMarker>, Void> {
 
         @Override
-        public Void visitIntersection(IntersectionType t, OptInResolverContext resolverContext) {
-            return null;
+        protected List<RequirementMarker> defaultAction(TypeMirror type, Void unused) {
+            return List.of();
         }
 
         @Override
-        public Void visitUnion(UnionType t, OptInResolverContext resolverContext) {
-            return null;
+        public List<RequirementMarker> visitArray(ArrayType type, Void unused) {
+            return type.getComponentType().accept(typeVisitor, null);
         }
 
         @Override
-        public Void visitPrimitive(PrimitiveType t, OptInResolverContext resolverContext) {
-            return null;
+        public List<RequirementMarker> visitDeclared(DeclaredType type, Void unused) {
+            List<RequirementMarker> requirementMarkers = new ArrayList<>(collectAllRequirementMarkers(type));
+
+            for (TypeMirror typeArgument : type.getTypeArguments()) {
+                requirementMarkers.addAll(typeArgument.accept(typeVisitor, null));
+            }
+
+            return List.copyOf(requirementMarkers);
         }
 
         @Override
-        public Void visitNull(NullType t, OptInResolverContext resolverContext) {
-            return null;
+        public List<RequirementMarker> visitIntersection(IntersectionType type, Void unused) {
+            return type.getBounds().stream().flatMap(it -> it.accept(typeVisitor, null).stream()).toList();
         }
 
         @Override
-        public Void visitArray(ArrayType t, OptInResolverContext resolverContext) {
-
-
-            return null;
+        public List<RequirementMarker> visitUnion(UnionType type, Void unused) {
+            return type.getAlternatives().stream().flatMap(it -> it.accept(typeVisitor, null).stream()).toList();
         }
 
-        @Override
-        public Void visitDeclared(DeclaredType t, OptInResolverContext resolverContext) {
-            return null;
-        }
-
-        @Override
-        public Void visitError(ErrorType t, OptInResolverContext resolverContext) {
-            return null;
-        }
-
-        @Override
-        public Void visitTypeVariable(TypeVariable t, OptInResolverContext resolverContext) {
-            return null;
-        }
-
-        @Override
-        public Void visitWildcard(WildcardType t, OptInResolverContext resolverContext) {
-            return null;
-        }
-
-        @Override
-        public Void visitExecutable(ExecutableType t, OptInResolverContext resolver) {
-            t.getReturnType().accept(this, resolver);
-
-            return null;
-        }
-
-        @Override
-        public Void visitNoType(NoType t, OptInResolverContext resolverContext) {
-            return null;
-        }
     }
 
 }

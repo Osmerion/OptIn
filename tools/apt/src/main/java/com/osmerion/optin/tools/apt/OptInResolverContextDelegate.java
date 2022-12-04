@@ -4,20 +4,28 @@
  */
 package com.osmerion.optin.tools.apt;
 
+import com.osmerion.optin.tools.apt.markers.AnnotationMarker;
+import com.osmerion.optin.tools.apt.markers.RequirementMarker;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 
-import javax.lang.model.element.Element;
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class OptInResolverContextDelegate implements OptInResolverContext {
 
     private final OptInResolverContext delegate;
-    private final List<AcceptedOptionality> optionalities;
+    private final List<? extends AnnotationMarker> markers;
 
-    public OptInResolverContextDelegate(OptInResolverContext delegate, List<AcceptedOptionality> optionalities) {
+    public OptInResolverContextDelegate(OptInResolverContext delegate, List<? extends AnnotationMarker> markers) {
         this.delegate = delegate;
-        this.optionalities = optionalities;
+        this.markers = markers;
+    }
+
+    @Override
+    public CompilationUnitTree getCompilationUnit() {
+        return this.delegate.getCompilationUnit();
     }
 
     @Override
@@ -26,12 +34,8 @@ public class OptInResolverContextDelegate implements OptInResolverContext {
     }
 
     @Override
-    public boolean isAccepted(String fqName, Element target) {
-        return this.optionalities.stream().anyMatch(it -> {
-            if (it.binder() != null && it.binder() != target) return false;
-
-            return it.fqMarkerName().equals(fqName);
-        }) || this.delegate.isAccepted(fqName, target);
+    public boolean isSatisfied(RequirementMarker marker, @Nullable Object binder) {
+        return this.markers.stream().anyMatch(it -> it.satisfies(marker, binder)) || delegate.isSatisfied(marker, binder);
     }
 
 }

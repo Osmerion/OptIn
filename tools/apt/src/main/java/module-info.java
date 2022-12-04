@@ -13,6 +13,8 @@ module com.osmerion.optin.tools.apt {
     requires java.compiler;
     requires jdk.compiler;
 
+    requires static jsr305;
+
     provides Processor with OptInProcessor;
 
 }
