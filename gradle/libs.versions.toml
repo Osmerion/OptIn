@@ -1,5 +1,5 @@
 [versions]
-compile-testing = "0.19"
+compile-testing = "0.20"
 extra-java-module-info = "1.1"
 gradle-intellij = "1.10.0"
 gradle-toolchain-switches = "0.2.0"
