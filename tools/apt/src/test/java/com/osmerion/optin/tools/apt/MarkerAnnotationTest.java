@@ -17,7 +17,7 @@ public final class MarkerAnnotationTest extends AbstractCompilerTest {
 
     @Test
     public void testMarkerAnnotationWithRetention_Class() {
-        JavaFileObject marker = createJavaFileObject(
+        JavaFileObject jfoMarker = createJavaFileObject(
             "com.example.Marker",
             """
             package com.example;
@@ -28,13 +28,17 @@ public final class MarkerAnnotationTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker);
-        assertEquals(Compilation.Status.SUCCESS, compilation.status());
+        Compilation compilation = compiler.compile(jfoMarker);
+        assertEquals(Compilation.Status.FAILURE, compilation.status());
+        assertEquals(1, compilation.diagnostics().size());
+
+        Diagnostic<?> diagnostic = compilation.diagnostics().get(0);
+        // TODO verify the diagnostic once the error message is done
     }
 
     @Test
     public void testMarkerAnnotationRetention_Source() {
-        JavaFileObject marker = createJavaFileObject(
+        JavaFileObject jfoMarker = createJavaFileObject(
             "com.example.Marker",
             """
             package com.example;
@@ -45,7 +49,7 @@ public final class MarkerAnnotationTest extends AbstractCompilerTest {
             """
         );
 
-        Compilation compilation = compiler.compile(marker);
+        Compilation compilation = compiler.compile(jfoMarker);
         assertEquals(Compilation.Status.FAILURE, compilation.status());
         assertEquals(1, compilation.diagnostics().size());
 
@@ -55,39 +59,36 @@ public final class MarkerAnnotationTest extends AbstractCompilerTest {
 
     @Test
     public void testMarkerAnnotationRetention_Runtime() {
-        JavaFileObject marker = createJavaFileObject(
+        JavaFileObject jfoMarker = createJavaFileObject(
             "com.example.Marker",
             """
             package com.example;
             
             @com.osmerion.optin.RequiresOptIn
-            @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)
+            @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
             public @interface Marker {}
             """
         );
 
-        Compilation compilation = compiler.compile(marker);
-        assertEquals(Compilation.Status.FAILURE, compilation.status());
-        assertEquals(1, compilation.diagnostics().size());
-
-        Diagnostic<?> diagnostic = compilation.diagnostics().get(0);
-        // TODO verify the diagnostic once the error message is done
+        Compilation compilation = compiler.compile(jfoMarker);
+        assertEquals(Compilation.Status.SUCCESS, compilation.status());
     }
 
     @Test
     public void testMarkerAnnotationTarget_TypeUse() {
-        JavaFileObject marker = createJavaFileObject(
+        JavaFileObject jfoMarker = createJavaFileObject(
             "com.example.Marker",
             """
             package com.example;
             
             @com.osmerion.optin.RequiresOptIn
+            @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
             @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE_USE)
             public @interface Marker {}
             """
         );
 
-        Compilation compilation = compiler.compile(marker);
+        Compilation compilation = compiler.compile(jfoMarker);
         assertEquals(Compilation.Status.FAILURE, compilation.status());
         assertEquals(1, compilation.diagnostics().size());
 

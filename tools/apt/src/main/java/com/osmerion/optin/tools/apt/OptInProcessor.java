@@ -20,6 +20,10 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.*;
 import java.util.function.BiFunction;
 
@@ -334,6 +338,48 @@ public final class OptInProcessor extends AbstractProcessor {
 
         @Override
         public Void visitType(TypeElement element, OptInResolverContext context) {
+            // Verify opt-in marker annotations
+            if (element.getKind() == ElementKind.ANNOTATION_TYPE && element.getAnnotation(RequiresOptIn.class) != null) { // TODO Kotlin support
+                /* Prohibit SOURCE retention */
+                Retention retention = element.getAnnotation(Retention.class);
+                RetentionPolicy retentionPolicy = (retention != null) ? retention.value() : RetentionPolicy.CLASS;
+
+                if (retentionPolicy != RetentionPolicy.RUNTIME) {
+                    String message = "@RequiresOptIn marker annotation must be used with RUNTIME retention";
+                    messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                }
+
+                /* Validate supported targets */
+                EnumSet<ElementType> validTargets = EnumSet.of(
+                    ElementType.ANNOTATION_TYPE,
+                    ElementType.CONSTRUCTOR,
+                    ElementType.FIELD,
+                    ElementType.METHOD,
+                    ElementType.MODULE,
+                    ElementType.PACKAGE,
+                    ElementType.TYPE
+                );
+
+                // TODO Are local variable declarations allowed by default?
+                Target target = element.getAnnotation(Target.class);
+
+                if (target != null) {
+                    ElementType[] targets = target.value();
+
+                    List<ElementType> invalidTargets = Arrays.stream(targets)
+                        .distinct()
+                        .filter(it -> !validTargets.contains(it))
+                        .toList();
+
+                    if (!invalidTargets.isEmpty()) {
+                        String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
+                        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+                    }
+                }
+
+                // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
+            }
+
             List<? extends AnnotationMarker> markers = collectAnnotationMarkers(element, null);
             context = context.withMarkers(markers);
 
