@@ -141,8 +141,17 @@ public final class OptInProcessor extends AbstractProcessor {
             .orElseThrow()
             .getValue();
 
-        TypeMirror markerTypeMirror = ((TypeMirror) markerValue.getValue());
-        return markerFactory.apply(markerTypeMirror.toString(), binder);
+        if (!(markerValue.getValue() instanceof TypeMirror markerValueTypeMirror)) {
+            /*
+             * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
+             * in a successful compilation.)
+             *
+             * (1) This can happen if a file is not on the classpath, imports are missing, etc.
+             */
+            return null;
+        }
+
+        return markerFactory.apply(markerValueTypeMirror.toString(), binder);
     }
 
     @Nullable
@@ -203,22 +212,6 @@ public final class OptInProcessor extends AbstractProcessor {
     private List<RequirementMarker> collectAllRequirementMarkers(ExecutableElement executableElement) {
         List<RequirementMarker> markers = new ArrayList<>();
         Element element = executableElement;
-
-        do {
-            List<RequirementMarker> elementMarkers = collectRequirementMarkers(element);
-            markers.addAll(elementMarkers);
-        } while ((element = element.getEnclosingElement()) != null);
-
-        return List.copyOf(markers);
-    }
-
-    private List<RequirementMarker> collectAllRequirementMarkers(TypeMirror mirror) {
-        if (mirror.getKind() != TypeKind.DECLARED) return List.of();
-
-        DeclaredType type = (DeclaredType) mirror;
-        Element element = type.asElement();
-
-        List<RequirementMarker> markers = new ArrayList<>();
 
         do {
             List<RequirementMarker> elementMarkers = collectRequirementMarkers(element);
@@ -533,7 +526,7 @@ public final class OptInProcessor extends AbstractProcessor {
 
             if (element != null) {
                 TypeMirror typeMirror = element.asType();
-                List<RequirementMarker> requirementMarkers = collectAllRequirementMarkers(typeMirror);
+                List<RequirementMarker> requirementMarkers = typeMirror.accept(typeVisitor, null);
                 reportUnsatisfiedRequirements(context, requirementMarkers, node, element);
             }
 
@@ -615,6 +608,22 @@ public final class OptInProcessor extends AbstractProcessor {
     }
 
     private final class OptInTypeVisitor2 extends SimpleTypeVisitor14<List<RequirementMarker>, Void> {
+
+        private List<RequirementMarker> collectAllRequirementMarkers(TypeMirror mirror) {
+            if (mirror.getKind() != TypeKind.DECLARED) return List.of();
+
+            DeclaredType type = (DeclaredType) mirror;
+            Element element = type.asElement();
+
+            List<RequirementMarker> markers = new ArrayList<>();
+
+            do {
+                List<RequirementMarker> elementMarkers = collectRequirementMarkers(element);
+                markers.addAll(elementMarkers);
+            } while ((element = element.getEnclosingElement()) != null);
+
+            return List.copyOf(markers);
+        }
 
         @Override
         protected List<RequirementMarker> defaultAction(TypeMirror type, Void unused) {
