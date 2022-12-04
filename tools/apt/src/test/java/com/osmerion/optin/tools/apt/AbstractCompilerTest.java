@@ -5,68 +5,35 @@
 package com.osmerion.optin.tools.apt;
 
 import com.google.testing.compile.Compiler;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.provider.Arguments;
 
-import javax.tools.JavaFileObject;
-
-import static com.osmerion.optin.tools.apt.StringJavaFileObjectFactory.*;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 public abstract class AbstractCompilerTest {
 
-    static JavaFileObject jfoOptInMarkerAnnotation;
-    static JavaFileObject jfoOptInClass;
-    static JavaFileObject jfoOptInOuterInner;
-
-    @BeforeAll
-    public static void init() {
-        jfoOptInMarkerAnnotation = createJavaFileObject(
-            "com.example.ExperimentalTestApi",
-            """
-            package com.example;
-            
-            @com.osmerion.optin.RequiresOptIn
-            public @interface ExperimentalTestApi {}
-            """
-        );
-
-        jfoOptInClass = createJavaFileObject(
-            "com.example.ExperimentalClass",
-            """
-            package com.example;
-            
-            @ExperimentalTestApi
-            public class ExperimentalClass {
-            
-                void call() {}
-                
-                ExperimentalClass self() {
-                    return this;
-                }
-            
-            }
-            """
-        );
-
-        jfoOptInOuterInner = createJavaFileObject(
-            "com.example.StableOuter",
-            """
-            public class StableOuter {
-            
-                @ExperimentalTestApi
-                public class UnstableInner {}
-            
-            }
-            """
+    protected static Stream<Arguments> provideTypeArguments() {
+        return Stream.of(
+            Arguments.of("MarkedClass"),
+            Arguments.of("UnmarkedClass.MarkedInnerClass"),
+            Arguments.of("UnmarkedClass.MarkedNestedClass"),
+            Arguments.of("UnmarkedClassWithTypeParameter<MarkedClass>")
         );
     }
 
+    @SuppressWarnings("NotNullFieldNotInitialized")
     protected Compiler compiler;
 
     @BeforeEach
     public void setup() {
+        String classpathPropertyValue = System.getProperty("GOOGLE_COMPILE_TESTING_CLASSPATH");
+        List<File> classpath = Arrays.stream(classpathPropertyValue.split(File.pathSeparator)).map(File::new).toList();
+
         this.compiler = Compiler.javac()
-            .withClasspathFrom(OptInProcessorTest.class.getClassLoader())
+            .withClasspath(classpath)
             .withOptions("--release", "17")
             .withProcessors(new OptInProcessor());
     }

@@ -150,6 +150,10 @@ public final class OptInProcessor extends AbstractProcessor {
         DeclaredType annotationType = mirror.getAnnotationType();
         Element annotationTypeElement = annotationType.asElement();
 
+        interface RequirementMarkerFactory {
+            RequirementMarker create(String fqMarkerName, String message, RequiresOptIn.Level level);
+        }
+
         // TODO Kotlin support
 
         RequiresOptIn requiresOptIn = annotationTypeElement.getAnnotation(RequiresOptIn.class);

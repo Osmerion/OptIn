@@ -15,6 +15,10 @@ public final class StringJavaFileObjectFactory {
         return JavaFileObjects.forSourceString(fqName, content);
     }
 
+    public static JavaFileObject createJavaFileObject(String fqName, @Language("JAVA") String content, String... args) {
+        return JavaFileObjects.forSourceString(fqName, String.format(content, (Object[]) args));
+    }
+
     @Deprecated
     private StringJavaFileObjectFactory() { throw new UnsupportedOperationException(); }
 
