@@ -29,7 +29,7 @@ tasks {
         val googleCompileTestingClasspath: FileCollection = googleCompileTestingClasspath
 
         doFirst {
-            environment("ENV_FOO" to googleCompileTestingClasspath.asPath)
+            systemProperty("GOOGLE_COMPILE_TESTING_CLASSPATH", googleCompileTestingClasspath.asPath)
         }
     }
 }
