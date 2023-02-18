@@ -6,6 +6,10 @@ import com.osmerion.optin.tools.apt.OptInProcessor;
 
 import javax.annotation.processing.Processor;
 
+/**
+ * Defines an annotation processor to validate opt-in marker annotations and
+ * their usages.
+ */
 module com.osmerion.optin.tools.apt {
 
     requires com.osmerion.optin;
