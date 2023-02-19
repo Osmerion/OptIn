@@ -9,7 +9,7 @@ plugins {
 
 intellij {
     version.set("2022.2")
-    type.set("IU")
+    type.set("IC")
 
     plugins.set(listOf(
         "com.intellij.java"
