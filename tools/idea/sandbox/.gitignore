@@ -1,7 +1,0 @@
-/.gradle
-/.idea
-/build
-/out
-
-/modules/*/build
-/modules/*/out
