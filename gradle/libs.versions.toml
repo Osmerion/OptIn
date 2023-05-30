@@ -43,3 +43,6 @@ extra-java-module-info = { id = "org.gradlex.extra-java-module-info", version.re
 
 # org.jetbrains.intellij - Gradle IntelliJ Plugin
 intellij = { id = "org.jetbrains.intellij", version.ref = "gradle-intellij" }
+
+# org.jetbrains.kotlin - Kotlin
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

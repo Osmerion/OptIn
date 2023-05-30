@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 plugins {
+    alias(libs.plugins.kotlin.jvm)
     id("com.osmerion.published-java-library")
-    kotlin("jvm") version "1.7.21"
 }
 
 val artifactID = "kotlin-compiler-plugin"
