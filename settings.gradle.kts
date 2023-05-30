@@ -28,14 +28,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+pluginManagement {
+    plugins {
+        id("org.gradle.toolchains.foojay-resolver-convention") version("0.5.0")
+    }
+
+    includeBuild("build-logic")
+}
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention")
+}
+
 rootProject.name = "OptIn"
 
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
-pluginManagement {
-    includeBuild("build-logic")
-}
 
 include(":library")
 include(":tools:apt")
