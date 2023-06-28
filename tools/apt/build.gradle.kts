@@ -67,5 +67,5 @@ dependencies {
     testImplementation(libs.compile.testing)
 
     googleCompileTestingClasspath(projects.library)
-    googleCompileTestingClasspath(projects.sandbox.modules.producerAlpha)
+    googleCompileTestingClasspath(projects.sandbox.producerAlpha)
 }

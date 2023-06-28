@@ -24,3 +24,14 @@ include(":tools:apt")
 include(":tools:gradle")
 include(":tools:idea")
 include(":tools:kotlinc")
+
+file("sandbox/modules").listFiles(File::isDirectory)!!.forEach { dir ->
+    fun hasBuildscript(it: File) = File(it, "build.gradle.kts").exists()
+
+    if (hasBuildscript(dir)) {
+        val projectName = "sandbox:${dir.name}"
+
+        include(projectName)
+        project(":$projectName").projectDir = dir
+    }
+}
