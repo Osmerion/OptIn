@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Leon Linhart
+ * Copyright (c) 2022-2023 Leon Linhart
  * All rights reserved.
  */
 package com.osmerion.optin.tools.gradle.internal
