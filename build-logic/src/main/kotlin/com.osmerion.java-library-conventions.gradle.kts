@@ -3,6 +3,6 @@
  * All rights reserved.
  */
 plugins {
-    `java-library`
     id("com.osmerion.java-base-conventions")
+    `java-library`
 }

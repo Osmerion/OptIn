@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 plugins {
+    id("com.osmerion.base-conventions")
     java
 }
 
