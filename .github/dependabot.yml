@@ -9,4 +9,5 @@ updates:
       prefix: "build"
     labels:
       - "a:chore"
+      - "in:build"
       - "in:dependencies"
