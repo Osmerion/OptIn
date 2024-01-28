@@ -6,26 +6,24 @@ plugins {
     id("com.osmerion.published-java-library")
 }
 
-val artifactID = "opt-in"
-
 tasks {
     compileJava {
-        options.javaModuleVersion.set("$version")
+        options.javaModuleVersion = "$version"
     }
 
     withType<Jar>().configureEach {
-        archiveBaseName.set(artifactID)
+        archiveBaseName = "opt-in"
     }
 }
 
 publishing {
     publications {
         named<MavenPublication>("mavenJava") {
-            artifactId = artifactID
+            artifactId = "opt-in"
 
             pom {
-                name.set("OptIn annotations")
-                description.set("Foundational annotation markers for declaring and working with APIs that require an explicit opt-in")
+                name = "OptIn annotations"
+                description = "Foundational annotation markers for declaring and working with APIs that require an explicit opt-in"
             }
         }
     }
