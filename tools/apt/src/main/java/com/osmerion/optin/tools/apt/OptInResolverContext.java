@@ -20,8 +20,8 @@ import com.osmerion.optin.tools.apt.markers.RequirementMarker;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public interface OptInResolverContext {

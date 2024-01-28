@@ -15,7 +15,7 @@
  */
 package com.osmerion.optin.tools.apt.markers;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * TODO doc

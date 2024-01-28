@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import com.osmerion.optin.tools.apt.OptInProcessor;
+import org.jspecify.annotations.NullMarked;
 
 import javax.annotation.processing.Processor;
 
@@ -21,6 +22,7 @@ import javax.annotation.processing.Processor;
  * Defines an annotation processor to validate opt-in marker annotations and
  * their usages.
  */
+@NullMarked
 module com.osmerion.optin.tools.apt {
 
     requires com.osmerion.optin;
@@ -28,7 +30,7 @@ module com.osmerion.optin.tools.apt {
     requires java.compiler;
     requires jdk.compiler;
 
-    requires static jsr305;
+    requires static org.jspecify;
 
     provides Processor with OptInProcessor;
 

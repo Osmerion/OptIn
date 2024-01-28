@@ -1,19 +1,15 @@
 [versions]
 compile-testing = "0.21.0"
-extra-java-module-info = "1.4.1"
 gradle-intellij = "1.17.0"
 gradle-toolchain-switches = "0.3.0"
 jetbrains-annotations = "24.0.0"
-jsr305 = "3.0.2"
+jspecify = "0.3.0"
 junit = "5.10.1"
 kotlin = "1.9.22"
 spock = "2.2-groovy-3.0"
 
 
 [libraries]
-# com.google.code.findbugs:jsr305 - JSR305
-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
-
 # com.google.testing.compile:compile-testing - Compile Testing
 compile-testing = { module = "com.google.testing.compile:compile-testing", version.ref = "compile-testing" }
 
@@ -23,6 +19,10 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "j
 # org.jetbrains.kotlin - Kotlin
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
 kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+
+# org.jspecify - JSpecify
+# https://github.com/jspecify/jspecify
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 
 # org.junit - JUnit
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -37,9 +37,6 @@ spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 [plugins]
 # io.github.themrmilchmann.gradle.toolchainswitches:gradle-toolchain-switches - Gradle Toolchain Switches Plugin
 gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version.ref = "gradle-toolchain-switches" }
-
-# org.gradlex.extra-java-module-info - Extra Java Module Info Gradle plugin
-extra-java-module-info = { id = "org.gradlex.extra-java-module-info", version.ref = "extra-java-module-info" }
 
 # org.jetbrains.intellij - Gradle IntelliJ Plugin
 intellij = { id = "org.jetbrains.intellij", version.ref = "gradle-intellij" }

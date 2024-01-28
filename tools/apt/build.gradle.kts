@@ -15,7 +15,6 @@
  */
 plugins {
     id("com.osmerion.published-java-library")
-    alias(libs.plugins.extra.java.module.info)
 }
 
 val artifactID = "tools-apt"
@@ -58,16 +57,10 @@ publishing {
     }
 }
 
-extraJavaModuleInfo {
-    failOnMissingModuleInfo.set(false)
-
-    automaticModule(libs.jsr305.get().module.toString(), "jsr305")
-}
-
 dependencies {
     implementation(projects.library)
 
-    compileOnly(libs.jsr305)
+    compileOnly(libs.jspecify)
 
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.params)
