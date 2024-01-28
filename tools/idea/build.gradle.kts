@@ -3,22 +3,20 @@
  * All rights reserved.
  */
 plugins {
-    id("com.osmerion.java-library-conventions")
     alias(libs.plugins.intellij)
+    id("com.osmerion.java-library-conventions")
 }
 
 intellij {
-    version.set("2022.2")
-    type.set("IC")
+    version = "2023.3"
+    type = "IC"
 
-    plugins.set(listOf(
-        "com.intellij.java"
-    ))
+    plugins.add("com.intellij.java")
 }
 
 tasks {
     withType<JavaCompile>().configureEach {
-        options.release.set(17)
+        options.release = 17
     }
 
     buildSearchableOptions {
