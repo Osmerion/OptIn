@@ -1,7 +1,7 @@
 [versions]
 compile-testing = "0.21.0"
 extra-java-module-info = "1.4.1"
-gradle-intellij = "1.14.2"
+gradle-intellij = "1.17.0"
 gradle-toolchain-switches = "0.3.0"
 jetbrains-annotations = "24.0.0"
 jsr305 = "3.0.2"
