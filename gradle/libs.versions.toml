@@ -14,6 +14,7 @@ spock = "2.2-groovy-3.0"
 compile-testing = { module = "com.google.testing.compile:compile-testing", version.ref = "compile-testing" }
 
 # org.jetbrains:annotations - JetBrains' Annotations for JVM-based languages
+# https://github.com/JetBrains/java-annotations
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 
 # org.jetbrains.kotlin - Kotlin
@@ -25,6 +26,7 @@ kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 
 # org.junit - JUnit
+# https://github.com/junit-team/junit5
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
@@ -39,6 +41,7 @@ spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version.ref = "gradle-toolchain-switches" }
 
 # org.jetbrains.intellij - Gradle IntelliJ Plugin
+# https://github.com/JetBrains/gradle-intellij-plugin
 intellij = { id = "org.jetbrains.intellij", version.ref = "gradle-intellij" }
 
 # org.jetbrains.kotlin - Kotlin
