@@ -5,7 +5,7 @@ gradle-toolchain-switches = "0.3.0"
 jetbrains-annotations = "26.0.2"
 jspecify = "0.3.0"
 junit = "5.12.2"
-kotlin = "1.9.22"
+kotlin = "2.1.21"
 spock = "2.2-groovy-3.0"
 
 
