@@ -2,7 +2,7 @@
 compile-testing = "0.21.0"
 gradle-intellij = "1.17.0"
 gradle-toolchain-switches = "0.3.0"
-jetbrains-annotations = "24.1.0"
+jetbrains-annotations = "26.0.2"
 jspecify = "0.3.0"
 junit = "5.12.2"
 kotlin = "1.9.22"
