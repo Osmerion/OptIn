@@ -1,0 +1,50 @@
+[versions]
+junit = "6.0.1"
+kotlin = "2.2.21"
+
+
+[libraries]
+# dev.zacsweers.kctfork - Kotlin Compile Testing
+# https://github.com/ZacSweers/kotlin-compile-testing
+kotlin-compile-testing = { module = "dev.zacsweers.kctfork:core", version = "0.11.1" }
+
+# org.assertj - AssertJ
+# https://github.com/assertj/assertj
+assertj-core = { module = "org.assertj:assertj-core", version = "3.27.6" }
+
+# org.jetbrains:annotations - JetBrains' Annotations for JVM-based languages
+# https://github.com/JetBrains/java-annotations
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.2" }
+
+# org.jetbrains.kotlin - Kotlin
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+
+# org.junit - JUnit
+# https://github.com/junit-team/junit5
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+
+[plugins]
+# com.gradle.plugin-publish - plugin-publish
+plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }
+
+# io.github.themrmilchmann.gradle.toolchainswitches:gradle-toolchain-switches - Gradle Toolchain Switches Plugin
+# https://github.com/TheMrMilchmann/gradle-toolchain-switches
+gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version = "0.3.0" }
+
+# org.jetbrains.intellij - Gradle IntelliJ Plugin
+# https://github.com/JetBrains/gradle-intellij-plugin
+intellij = { id = "org.jetbrains.intellij.platform" }
+
+# org.jetbrains.kotlinx.binary-compatibility-validator - binary-compatibility-validator
+# https://github.com/Kotlin/binary-compatibility-validator
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
+
+# org.jetbrains.kotlin - Kotlin
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-samwithreceiver = { id = "org.jetbrains.kotlin.plugin.sam.with.receiver", version.ref = "kotlin" }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
+
 pluginManagement {
     plugins {
         id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+        id("org.jetbrains.intellij.platform.settings") version "2.10.5"
     }
 
     includeBuild("build-logic")
@@ -23,26 +26,43 @@ pluginManagement {
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention")
+    id("org.jetbrains.intellij.platform.settings")
 }
 
 rootProject.name = "OptIn"
 
-enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
 
-include(":library")
+    repositories {
+        mavenCentral()
+
+        // https://github.com/gradle/gradle/issues/29483
+        maven(url = "https://repo.gradle.org/gradle/libs-releases/") {
+            mavenContent {
+                includeGroup("org.gradle.experimental")
+            }
+        }
+
+        intellijPlatform {
+            defaultRepositories()
+        }
+    }
+
+    versionCatalogs {
+        register("buildDeps") {
+            from(files("./gradle/build.versions.toml"))
+        }
+    }
+}
+
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+// enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS") - See https://github.com/gradle/gradle/issues/16608
+
+includeBuild("sandbox")
+
+include(":opt-in")
 include(":tools:apt")
 include(":tools:gradle")
 include(":tools:idea")
 include(":tools:kotlinc")
-
-file("sandbox/modules").listFiles(File::isDirectory)!!.forEach { dir ->
-    fun hasBuildscript(it: File) = File(it, "build.gradle.kts").exists()
-
-    if (hasBuildscript(dir)) {
-        val projectName = "sandbox:${dir.name}"
-
-        include(projectName)
-        project(":$projectName").projectDir = dir
-    }
-}

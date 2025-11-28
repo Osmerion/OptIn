@@ -1,13 +1,33 @@
 /*
- * Copyright (c) 2022-2023 Leon Linhart
- * All rights reserved.
+ * Copyright 2022-2025 Leon Linhart
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    id("com.osmerion.published-java-library")
+    alias(buildDeps.plugins.kotlin.jvm)
+    id("com.osmerion.java-base-conventions")
+    id("com.osmerion.maven-publish-conventions")
 }
 
 val artifactID = "kotlin-compiler-plugin"
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
 
 tasks {
     test {
@@ -21,12 +41,14 @@ tasks {
 
 publishing {
     publications {
-        named<MavenPublication>("mavenJava") {
+        register<MavenPublication>("mavenJava") {
+            from(components["java"])
+
             artifactId = artifactID
 
             pom {
-                name.set("OptIn Kotlin Compiler Plugin")
-                description.set("A Kotlin compiler plugin which provides interoperability with Kotlin's opt-in annotation markers")
+                name = "OptIn Kotlin Compiler Plugin"
+                description = "A Kotlin compiler plugin which provides interoperability with Kotlin's opt-in annotation markers"
             }
         }
     }
@@ -34,5 +56,5 @@ publishing {
 
 
 dependencies {
-    compileOnly(libs.kotlin.compiler.embeddable)
+    compileOnly(buildDeps.kotlin.compiler.embeddable)
 }

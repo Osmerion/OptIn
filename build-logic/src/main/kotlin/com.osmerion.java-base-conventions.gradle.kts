@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 plugins {
-    id("com.osmerion.base-conventions")
-    java
+    `java-base`
 }
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(19))
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 tasks {
     withType<JavaCompile>().configureEach {
-        options.release.set(17)
+        options.release = 17
     }
 }

@@ -1,48 +1,8 @@
-[versions]
-compile-testing = "0.21.0"
-gradle-intellij = "1.17.0"
-gradle-toolchain-switches = "0.3.0"
-jetbrains-annotations = "26.0.2"
-jspecify = "1.0.0"
-junit = "6.0.1"
-kotlin = "2.2.10"
-spock = "2.2-groovy-3.0"
-
-
 [libraries]
-# com.google.testing.compile:compile-testing - Compile Testing
-compile-testing = { module = "com.google.testing.compile:compile-testing", version.ref = "compile-testing" }
-
-# org.jetbrains:annotations - JetBrains' Annotations for JVM-based languages
-# https://github.com/JetBrains/java-annotations
-jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
-
-# org.jetbrains.kotlin - Kotlin
-kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
-kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
+# org.gradle - Gradle
+# https://github.com/gradle/gradle
+gradle-api = { module = "org.gradle.experimental:gradle-public-api", version = "9.0.0" }
 
 # org.jspecify - JSpecify
 # https://github.com/jspecify/jspecify
-jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
-
-# org.junit - JUnit
-# https://github.com/junit-team/junit5
-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
-
-# org.spockframework - Spock
-spock-bom = { module = "org.spockframework:spock-bom", version.ref = "spock" }
-spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
-
-
-[plugins]
-# io.github.themrmilchmann.gradle.toolchainswitches:gradle-toolchain-switches - Gradle Toolchain Switches Plugin
-gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version.ref = "gradle-toolchain-switches" }
-
-# org.jetbrains.intellij - Gradle IntelliJ Plugin
-# https://github.com/JetBrains/gradle-intellij-plugin
-intellij = { id = "org.jetbrains.intellij", version.ref = "gradle-intellij" }
-
-# org.jetbrains.kotlin - Kotlin
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }

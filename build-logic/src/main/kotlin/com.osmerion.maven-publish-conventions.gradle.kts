@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,49 @@
  * limitations under the License.
  */
 plugins {
-    id("com.osmerion.base-conventions")
     `maven-publish`
     signing
 }
 
 publishing {
-    repositories {
-        // TODO configure repositories
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name = project.name
+            url = "https://github.com/Osmerion/OptIn"
+
+            licenses {
+                license {
+                    name = "Apache-2.0"
+                    url = "https://github.com/Osmerion/OptIn/blob/master/LICENSE"
+                    distribution = "repo"
+                }
+            }
+
+            developers {
+                developer {
+                    id = "TheMrMilchmann"
+                    name = "Leon Linhart"
+                    email = "themrmilchmann@gmail.com"
+                    url = "https://github.com/TheMrMilchmann"
+                }
+            }
+
+            scm {
+                connection = "scm:git:git://github.com/Osmerion/OptIn.git"
+                developerConnection = "scm:git:git://github.com/Osmerion/OptIn.git"
+                url = "https://github.com/Osmerion/OptIn.git"
+            }
+        }
     }
 }
 
 signing {
+    // Only require signing when publishing to a non-local maven repository
+    setRequired { gradle.taskGraph.allTasks.any { it is PublishToMavenRepository } }
+
+    val signingKey: String? by project
+    val signingPassword: String? by project
+    useInMemoryPgpKeys(signingKey, signingPassword)
+
     sign(publishing.publications)
 }

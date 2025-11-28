@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,62 +14,98 @@
  * limitations under the License.
  */
 plugins {
-    id("com.osmerion.published-java-library")
+    id("com.osmerion.java-base-conventions")
+    id("com.osmerion.maven-publish-conventions")
+    java
+    `jvm-test-suite`
 }
 
-val artifactID = "tools-apt"
-
-val googleCompileTestingClasspath = configurations.create("googleCompileTestingClasspath") {
+val compileTestingClasspath = configurations.create("compileTestingClasspath") {
     isCanBeConsumed = false
     isCanBeResolved = true
 }
 
-tasks {
-    withType<Test>().configureEach {
-        useJUnitPlatform()
-    }
+@Suppress("UnstableApiUsage")
+testing {
+    suites {
+        withType<JvmTestSuite>().configureEach {
+            useJUnitJupiter()
 
-    withType<Jar>().configureEach {
-        archiveBaseName.set(artifactID)
-    }
+            dependencies {
+                implementation(platform(buildDeps.junit.bom))
+                implementation(buildDeps.junit.jupiter.api)
+                implementation(buildDeps.junit.jupiter.params)
 
-    test {
-        dependsOn(googleCompileTestingClasspath)
+                implementation(buildDeps.assertj.core)
 
-        val googleCompileTestingClasspath: FileCollection = googleCompileTestingClasspath
-
-        doFirst {
-            systemProperty("GOOGLE_COMPILE_TESTING_CLASSPATH", googleCompileTestingClasspath.asPath)
+                runtimeOnly(buildDeps.junit.jupiter.engine)
+                runtimeOnly(buildDeps.junit.platform.launcher)
+            }
         }
+
+        register<JvmTestSuite>("functionalTest") {
+            targets.configureEach {
+                testTask.configure {
+                    useJUnitJupiter()
+
+                    jvmArgs(
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                        "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                    )
+
+                    // Ensure that the compile-testing classpath is available to the test task
+                    val compileTestingClasspath: FileCollection = compileTestingClasspath
+
+                    doFirst {
+                        systemProperty("COMPILE_TESTING_CLASSPATH", compileTestingClasspath.asPath)
+                    }
+                }
+            }
+
+            dependencies {
+                implementation(project())
+                implementation(buildDeps.jetbrains.annotations)
+                implementation(buildDeps.kotlin.compile.testing)
+            }
+        }
+    }
+}
+
+tasks {
+    @Suppress("UnstableApiUsage")
+    check {
+        dependsOn(testing.suites.named("functionalTest"))
     }
 }
 
 publishing {
     publications {
-        named<MavenPublication>("mavenJava") {
-            artifactId = artifactID
+        register<MavenPublication>("mavenJava") {
+            from(components["java"])
+
+            artifactId = "tools-apt"
 
             pom {
-                name.set("OptIn Annotation Processor")
-                description.set("An annotation processor which validates opt-in annotation markers at compile-time")
+                name = "OptIn Annotation Processor"
+                description = "The OptIn annotation processor validates API opt-in requirements at compile-time."
             }
         }
     }
 }
 
 dependencies {
-    implementation(projects.library)
+    implementation(project(":opt-in"))
+    implementation(libs.jspecify)
 
-    compileOnly(libs.jspecify)
-
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.params)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-
-    testCompileOnly(libs.jetbrains.annotations)
-
-    testImplementation(libs.compile.testing)
-
-    googleCompileTestingClasspath(projects.library)
-    googleCompileTestingClasspath(projects.sandbox.producerAlpha)
+    compileTestingClasspath(project(":opt-in"))
+    compileTestingClasspath("com.example:producer-alpha")
+    compileTestingClasspath("com.example:producer-beta")
 }

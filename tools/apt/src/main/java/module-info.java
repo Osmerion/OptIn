@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@ import org.jspecify.annotations.NullMarked;
 
 import javax.annotation.processing.Processor;
 
-/**
- * Defines an annotation processor to validate opt-in marker annotations and
- * their usages.
- */
+/** Defines an annotation processor to validate opt-in marker annotations and their usages. */
 @NullMarked
 module com.osmerion.optin.tools.apt {
 
@@ -30,7 +27,9 @@ module com.osmerion.optin.tools.apt {
     requires java.compiler;
     requires jdk.compiler;
 
-    requires static org.jspecify;
+    requires org.jspecify;
+
+    exports com.osmerion.optin.tools.apt;
 
     provides Processor with OptInProcessor;
 

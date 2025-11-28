@@ -7,4 +7,8 @@
 !/.idea/scopes
 !/.idea/icon.png
 
+/.intellijPlatform
+
+/.kotlin
+
 /build
