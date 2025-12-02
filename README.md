@@ -1,17 +1,22 @@
 # OptIn
 
-![Java](https://img.shields.io/badge/Java-17-green.svg?style=flat-square&color=b07219&logo=java)
+[![License](https://img.shields.io/badge/license-Apache%202.0-yellowgreen.svg?style=for-the-badge&label=License)](https://github.com/Osmerion/OptIn/blob/master/LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/com.osmerion.optin/opt-in.svg?style=for-the-badge&label=Maven%20Central)](https://maven-badges.herokuapp.com/maven-central/com.osmerion.optin/opt-in)
+[![JavaDoc](https://img.shields.io/maven-central/v/com.osmerion.optin/opt-in.svg?style=for-the-badge&label=JavaDoc&color=blue)](https://javadoc.io/doc/com.osmerion.optin/opt-in)
+![Java](https://img.shields.io/badge/Java-17-green.svg?style=for-the-badge&color=b07219&logo=Java)
+
+!TODO
 
 
 ## Building from source
 
 ### Setup
 
-This project uses [Gradle's toolchain support](https://docs.gradle.org/8.5/userguide/toolchains.html)
+This project uses [Gradle's toolchain support](https://docs.gradle.org/current/userguide/toolchains.html)
 to detect and select the JDKs required to run the build. Please refer to the
 build scripts to find out which toolchains are requested.
 
-An installed JDK 1.8 (or later) is required to use Gradle.
+An installed JDK 17 (or later) is required to use Gradle.
 
 ### Building
 
@@ -36,7 +41,7 @@ Additionally `tasks` may be used to print a list of all available tasks.
 ## License
 
 ```
-Copyright 2022-2024 Leon Linhart
+Copyright 2022-2025 Leon Linhart
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
