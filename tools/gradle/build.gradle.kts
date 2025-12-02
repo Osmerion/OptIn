@@ -164,6 +164,4 @@ dependencies {
             requireCapability("org.gradle.experimental:gradle-public-api-internal")
         }
     }
-
-    compileOnly(buildDeps.kotlin.gradle.plugin.api)
 }
