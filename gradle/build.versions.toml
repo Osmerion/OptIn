@@ -16,6 +16,10 @@ assertj-core = { module = "org.assertj:assertj-core", version = "3.27.6" }
 # https://github.com/JetBrains/java-annotations
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.2-1" }
 
+# org.jetbrains.kotlin - Kotlin
+# https://github.com/JetBrains/kotlin
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+
 # org.junit - JUnit
 # https://github.com/junit-team/junit5
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

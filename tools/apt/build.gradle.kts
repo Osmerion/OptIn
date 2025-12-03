@@ -46,6 +46,8 @@ testing {
         register<JvmTestSuite>("functionalTest") {
             targets.configureEach {
                 testTask.configure {
+                    dependsOn(compileTestingClasspath)
+
                     useJUnitJupiter()
 
                     jvmArgs(
@@ -105,7 +107,7 @@ dependencies {
     implementation(project(":opt-in"))
     implementation(libs.jspecify)
 
-    compileTestingClasspath(project(":opt-in"))
+    compileTestingClasspath(buildDeps.kotlin.stdlib)
     compileTestingClasspath("com.example:producer-alpha")
     compileTestingClasspath("com.example:producer-beta")
 }
