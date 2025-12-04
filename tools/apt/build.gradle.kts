@@ -93,8 +93,6 @@ publishing {
         register<MavenPublication>("mavenJava") {
             from(components["java"])
 
-            artifactId = "tools-apt"
-
             pom {
                 name = "OptIn Annotation Processor"
                 description = "The OptIn annotation processor validates API opt-in requirements at compile-time."
