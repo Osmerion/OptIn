@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(buildDeps.plugins.binary.compatibility.validator)
+    alias(buildDeps.plugins.gradle.buildconfig)
     alias(buildDeps.plugins.gradle.toolchain.switches)
     alias(buildDeps.plugins.kotlin.jvm)
     alias(buildDeps.plugins.kotlin.plugin.samwithreceiver)
@@ -58,7 +59,7 @@ gradlePlugin {
             description = "A Gradle plugin to automatically configure set up the OptIn dependencies and tooling integrations."
             tags.addAll("opt-in")
 
-            implementationClass = "com.osmerion.optin.tools.gradle.plugins.OptInGradlePlugin"
+            implementationClass = "com.osmerion.optin.tools.gradle.plugins.OptInPlugin"
         }
     }
 }
@@ -86,6 +87,19 @@ testing {
         val test = named<JvmTestSuite>("test") {
             dependencies {
                 implementation(gradleTestKit())
+            }
+        }
+
+        register<JvmTestSuite>("integrationTest") {
+            dependencies {
+                implementation(project())
+                implementation(gradleTestKit())
+            }
+
+            targets.configureEach {
+                testTask.configure {
+                    shouldRunAfter(test)
+                }
             }
         }
 
@@ -137,14 +151,22 @@ tasks {
         }
     }
 
+    @Suppress("UnstableApiUsage")
     check {
-        @Suppress("UnstableApiUsage")
         dependsOn(testing.suites.named("functionalTest"))
+        dependsOn(testing.suites.named("integrationTest"))
     }
 
     validatePlugins {
         enableStricterValidation = true
     }
+}
+
+buildConfig {
+    packageName = "com.osmerion.optin.tools.gradle.internal"
+
+    buildConfigField("BUILD_GROUP", provider { "${project.group}" })
+    buildConfigField("BUILD_VERSION", provider { "${project.version}" })
 }
 
 publishing {

@@ -1,0 +1,11 @@
+public abstract interface class com/osmerion/optin/tools/gradle/OptInExtension {
+	public abstract fun getArtifactGroup ()Lorg/gradle/api/provider/Property;
+	public abstract fun getArtifactVersion ()Lorg/gradle/api/provider/Property;
+}
+
+public class com/osmerion/optin/tools/gradle/plugins/OptInPlugin : org/gradle/api/Plugin {
+	public fun <init> ()V
+	public synthetic fun apply (Ljava/lang/Object;)V
+	public fun apply (Lorg/gradle/api/Project;)V
+}
+

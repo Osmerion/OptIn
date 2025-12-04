@@ -62,6 +62,12 @@ enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 includeBuild("sandbox")
 
 include(":opt-in")
-include(":tools:apt")
-include(":tools:gradle")
-include(":tools:idea")
+
+include(":tools-apt")
+project(":tools-apt").projectDir = file("./tools/apt")
+
+include(":tools-gradle")
+project(":tools-gradle").projectDir = file("./tools/gradle")
+
+include(":tools-idea")
+project(":tools-idea").projectDir = file("./tools/idea")
