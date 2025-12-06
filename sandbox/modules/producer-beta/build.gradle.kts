@@ -20,4 +20,6 @@ plugins {
 
 dependencies {
     api("com.osmerion.optin:opt-in")
+
+    annotationProcessor("com.osmerion.optin:tools-apt")
 }
