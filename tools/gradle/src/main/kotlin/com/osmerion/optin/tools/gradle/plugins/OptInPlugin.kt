@@ -43,7 +43,7 @@ public open class OptInPlugin : Plugin<Project> {
         optInExtension.artifactGroup.convention(BuildConfig.BUILD_GROUP)
         optInExtension.artifactVersion.convention(BuildConfig.BUILD_VERSION)
 
-        pluginManager.withPlugin("org.gradle.jvm-ecosystem") {
+        pluginManager.withPlugin("org.gradle.java-base") {
             configureJvmIntegration(target, optInExtension)
         }
     }
