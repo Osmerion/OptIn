@@ -15,9 +15,12 @@
  */
 package com.osmerion.optin.tools.gradle.plugins
 
+import com.osmerion.optin.tools.gradle.OptInExtension
 import org.gradle.api.Project
-import org.gradle.api.plugins.JvmEcosystemPlugin
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.kotlin.dsl.getByName
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Assertions.*
@@ -43,16 +46,36 @@ class OptInPluginIntegrationTest {
     @Test
     fun `Annotation processor is configured for all source sets`() {
         project.pluginManager.apply(OptInPlugin::class.java)
-        project.pluginManager.apply(JvmEcosystemPlugin::class.java)
+        project.pluginManager.apply(JavaLibraryPlugin::class.java)
 
         val sourceSets = project.extensions.getByType<SourceSetContainer>()
-        sourceSets.forEach {
-            val configuration = project.configurations.getByName(it.annotationProcessorConfigurationName)
+        assertTrue(sourceSets.isNotEmpty())
+        sourceSets.forEach { sourceSet ->
+            val configuration = project.configurations.getByName(sourceSet.annotationProcessorConfigurationName)
             val dependency = configuration.dependencies.single()
 
             assertEquals("com.osmerion.optin", dependency.group)
             assertEquals("tools-apt", dependency.name)
             assertNotNull(dependency.version)
+        }
+    }
+
+    @Test
+    fun `Extra marker annotation is passed as CLI argument`() {
+        project.pluginManager.apply(OptInPlugin::class.java)
+        project.pluginManager.apply(JavaLibraryPlugin::class.java)
+
+        val optInExtension = project.extensions.getByType<OptInExtension>()
+        optInExtension.requireOptIn("com.google.common.annotations.Beta")
+
+        val sourceSets = project.extensions.getByType<SourceSetContainer>()
+        assertTrue(sourceSets.isNotEmpty())
+        sourceSets.forEach { sourceSet ->
+            val task = project.tasks.getByName<JavaCompile>(sourceSet.compileJavaTaskName)
+
+            val compilerArgs = task.options.allCompilerArgs
+            assertEquals(1, compilerArgs.size)
+            assertEquals("-Acom.osmerion.optin.markers='com.google.common.annotations.Beta,error'", compilerArgs.single())
         }
     }
 

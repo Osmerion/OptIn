@@ -17,16 +17,19 @@ package com.osmerion.optin.tools.gradle.plugins
 
 import com.osmerion.optin.tools.gradle.OptInExtension
 import com.osmerion.optin.tools.gradle.internal.BuildConfig
+import com.osmerion.optin.tools.gradle.internal.OptInExtensionInternal
 import com.osmerion.optin.tools.gradle.internal.applyTo
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.*
+import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.util.GradleVersion
 
 /**
- * The `OptInPlugin` registers the [com.osmerion.optin.tools.gradle.OptInExtension] and automatically sets up the OptIn annotation processor for
- * Java projects.
+ * The `OptInPlugin` registers the [OptInExtension] and automatically sets up the OptIn annotation processor for Java
+ * projects.
  *
  * @since   0.1.0
  *
@@ -39,7 +42,9 @@ public open class OptInPlugin : Plugin<Project> {
             throw IllegalStateException("This plugin requires Gradle 9.0.0 or later")
         }
 
-        val optInExtension = extensions.create<OptInExtension>("optIn")
+        val optInExtension = extensions.create(OptInExtension::class.java, "optIn", OptInExtensionInternal::class.java)
+            as OptInExtensionInternal
+
         optInExtension.artifactGroup.convention(BuildConfig.BUILD_GROUP)
         optInExtension.artifactVersion.convention(BuildConfig.BUILD_VERSION)
 
@@ -48,7 +53,7 @@ public open class OptInPlugin : Plugin<Project> {
         }
     }
 
-    private fun configureJvmIntegration(project: Project, extension: OptInExtension) {
+    private fun configureJvmIntegration(project: Project, extension: OptInExtensionInternal) {
         val sourceSets = project.extensions.getByType<SourceSetContainer>()
 
         sourceSets.configureEach {
@@ -59,6 +64,32 @@ public open class OptInPlugin : Plugin<Project> {
             }
 
             project.dependencies.add(annotationProcessorConfigurationName, aptDependency)
+
+            project.tasks.named<JavaCompile>(compileJavaTaskName) {
+                @Suppress("ObjectLiteralToLambda")
+                options.compilerArgumentProviders.add(object : CommandLineArgumentProvider {
+
+                    override fun asArguments(): Iterable<String> =
+                        extension.extraMarkerAnnotations.values
+                            .map { extraMarkerAnnotation ->
+                                buildString {
+                                    append(extraMarkerAnnotation.name)
+                                    append(',')
+                                    append(extraMarkerAnnotation.level.value)
+
+                                    if (extraMarkerAnnotation.message != null) {
+                                        append(',')
+                                        append(extraMarkerAnnotation.message)
+                                    }
+                                }
+                            }
+                            .takeIf(List<*>::isNotEmpty)
+                            ?.joinToString(separator = ";")
+                            ?.let { "-Acom.osmerion.optin.markers='$it'" }
+                            ?.let(::listOf) ?: emptyList()
+
+                })
+            }
         }
     }
 
