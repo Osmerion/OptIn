@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 plugins {
+    alias(buildDeps.plugins.mrjar)
     id("com.osmerion.java-base-conventions")
     id("com.osmerion.maven-publish-conventions")
     java
@@ -23,6 +24,10 @@ plugins {
 val compileTestingClasspath = configurations.create("compileTestingClasspath") {
     isCanBeConsumed = false
     isCanBeResolved = true
+}
+
+multiRelease {
+    targetVersions(17, 20)
 }
 
 @Suppress("UnstableApiUsage")
@@ -82,6 +87,10 @@ testing {
 }
 
 tasks {
+    named<JavaCompile>("compileJava20Java") {
+        options.release = 20
+    }
+
     @Suppress("UnstableApiUsage")
     check {
         dependsOn(testing.suites.named("functionalTest"))

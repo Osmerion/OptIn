@@ -15,6 +15,8 @@
  */
 package com.osmerion.optin.tools.apt.internal;
 
+import com.osmerion.optin.tools.apt.internal.javac.JavacUtil17;
+import com.osmerion.optin.tools.apt.internal.javac.JavacUtilGetter;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.CompilationUnitTree;
@@ -54,7 +56,9 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         this.gatheringElementVisitor = new GatheringElementVisitor(this, elements, types);
         this.gatheringTypeVisitor = new GatheringTypeVisitor(this);
 
-        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees);
+        JavacUtil17 javacUtil = JavacUtilGetter.getJavacUtil(elements, types);
+
+        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, javacUtil);
         this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, trees);
     }
 

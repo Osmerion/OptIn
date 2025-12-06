@@ -15,6 +15,8 @@
  */
 package com.osmerion.optin.tools.apt.internal;
 
+import com.osmerion.optin.tools.apt.internal.javac.JavacUtil17;
+import com.osmerion.optin.tools.apt.internal.javac.JavacUtilGetter;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.sun.source.util.Trees;
 
@@ -34,10 +36,13 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
     private final Elements elements;
     private final Trees trees;
 
-    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees) {
+    private final JavacUtil17 javacUtil;
+
+    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, JavacUtil17 javacUtil) {
         this.processingContext = processingContext;
         this.elements = elements;
         this.trees = trees;
+        this.javacUtil = javacUtil;
     }
 
     @Override
@@ -53,8 +58,14 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
             return null;
         }
 
-        /* Skip elements that are not explicitly declared in source code. They are covered by other rules. */
-        if (this.elements.getOrigin(element) != Elements.Origin.EXPLICIT) {
+        /*
+         * Skip all SYNTHETIC elements as those are covered by other rules.
+         * Skip MANDATED elements except for canonical record ctors (to verify components correctly).
+         */
+        Elements.Origin origin = this.elements.getOrigin(element);
+        if (origin == Elements.Origin.SYNTHETIC) {
+            return null;
+        } else if (origin == Elements.Origin.MANDATED && !this.javacUtil.isCanonicalConstructor(element)) {
             return null;
         }
 
@@ -157,6 +168,18 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
 
         /* 2. Verify the requirements. */
         super.visitType(element, context);
+
+        return null;
+    }
+
+    @Override
+    public Void visitModule(ModuleElement element, VerificationContext context) {
+        /* 1. Gather all requirements and opt-ins for the element. */
+        Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);
+        context = context.withAnnotations(annotations);
+
+        /* 2. Verify the requirements. */
+        this.processingContext.verifyTree(element, context);
 
         return null;
     }

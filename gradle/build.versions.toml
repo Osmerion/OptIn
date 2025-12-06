@@ -41,6 +41,10 @@ plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }
 # https://github.com/TheMrMilchmann/gradle-toolchain-switches
 gradle-toolchain-switches = { id = "io.github.themrmilchmann.toolchain-switches", version = "0.3.0" }
 
+# me.champeau.mrjar - Multi-release JAR plugin for Gradle
+# https://github.com/melix/mrjar-gradle-plugin
+mrjar = { id = "me.champeau.mrjar", version = "0.1.1" }
+
 # org.jetbrains.intellij - Gradle IntelliJ Plugin
 # https://github.com/JetBrains/gradle-intellij-plugin
 intellij = { id = "org.jetbrains.intellij.platform" }
