@@ -54,8 +54,8 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         this.gatheringElementVisitor = new GatheringElementVisitor(this, elements, types);
         this.gatheringTypeVisitor = new GatheringTypeVisitor(this);
 
-        this.verifyingElementVisitor = new VerifyingElementVisitor(this, this.trees);
-        this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, this.trees);
+        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees);
+        this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, trees);
     }
 
     @Override

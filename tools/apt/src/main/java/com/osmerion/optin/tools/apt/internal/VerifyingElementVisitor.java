@@ -20,6 +20,7 @@ import com.sun.source.util.Trees;
 
 import javax.lang.model.element.*;
 import javax.lang.model.util.ElementScanner14;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,10 +31,12 @@ import java.util.*;
 final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationContext> {
 
     private final OptInProcessingContext processingContext;
+    private final Elements elements;
     private final Trees trees;
 
-    public VerifyingElementVisitor(OptInProcessingContext processingContext, Trees trees) {
+    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees) {
         this.processingContext = processingContext;
+        this.elements = elements;
         this.trees = trees;
     }
 
@@ -47,6 +50,11 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
          * issue but in the context of the classfile attributes.
          */
         if (this.trees.getTree(element) == null) {
+            return null;
+        }
+
+        /* Skip elements that are not explicitly declared in source code. They are covered by other rules. */
+        if (this.elements.getOrigin(element) != Elements.Origin.EXPLICIT) {
             return null;
         }
 
