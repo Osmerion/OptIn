@@ -75,7 +75,7 @@ class OptInPluginIntegrationTest {
 
             val compilerArgs = task.options.allCompilerArgs
             assertEquals(1, compilerArgs.size)
-            assertEquals("-Acom.osmerion.optin.markers='com.google.common.annotations.Beta,error'", compilerArgs.single())
+            assertEquals("-Acom.osmerion.optin.RequiresOptIn='com.google.common.annotations.Beta,error'", compilerArgs.single())
         }
     }
 

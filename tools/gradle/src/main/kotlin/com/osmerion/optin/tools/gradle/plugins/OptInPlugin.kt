@@ -85,7 +85,7 @@ public open class OptInPlugin : Plugin<Project> {
                             }
                             .takeIf(List<*>::isNotEmpty)
                             ?.joinToString(separator = ";")
-                            ?.let { "-Acom.osmerion.optin.markers='$it'" }
+                            ?.let { "-Acom.osmerion.optin.RequiresOptIn='$it'" }
                             ?.let(::listOf) ?: emptyList()
 
                 })
