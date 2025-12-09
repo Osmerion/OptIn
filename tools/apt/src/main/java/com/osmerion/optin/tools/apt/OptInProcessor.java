@@ -15,6 +15,7 @@
  */
 package com.osmerion.optin.tools.apt;
 
+import com.osmerion.optin.tools.apt.internal.Configuration;
 import com.osmerion.optin.tools.apt.internal.OptInProcessingContextImpl;
 import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
@@ -27,13 +28,16 @@ import javax.lang.model.util.Types;
 import java.util.*;
 
 /**
- * An annotation processor to validate opt-in marker annotations and their usages.
+ * An annotation processor to validate opt-in marker annotations and their usage.
  *
  * @since   0.1.0
  *
  * @author  Leon Linhart
  */
 @SupportedAnnotationTypes("*")
+@SupportedOptions({
+    Configuration.OPT_RequiresOptIn
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class OptInProcessor extends AbstractProcessor {
 
@@ -42,12 +46,15 @@ public final class OptInProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+
+        Configuration configuration = Configuration.parse(processingEnv.getOptions());
+
         Elements elements = processingEnv.getElementUtils();
         Messager messager = processingEnv.getMessager();
         Trees trees = Trees.instance(processingEnv);
         Types types = processingEnv.getTypeUtils();
 
-        this.processingContext = new OptInProcessingContextImpl(elements, messager, trees, types);
+        this.processingContext = new OptInProcessingContextImpl(configuration, elements, messager, trees, types);
     }
 
     @Override

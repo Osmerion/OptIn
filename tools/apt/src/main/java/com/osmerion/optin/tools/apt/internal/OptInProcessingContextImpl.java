@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 
 public final class OptInProcessingContextImpl implements OptInProcessingContext {
 
+    private final Configuration configuration;
+
     private final Messager messager;
     private final Trees trees;
 
@@ -45,11 +47,14 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     private final VerifyingTreeVisitor verifyingTreeVisitor;
 
     public OptInProcessingContextImpl(
+        Configuration configuration,
         Elements elements,
         Messager messager,
         Trees trees,
         Types types
     ) {
+        this.configuration = configuration;
+
         this.messager = messager;
         this.trees = trees;
 
