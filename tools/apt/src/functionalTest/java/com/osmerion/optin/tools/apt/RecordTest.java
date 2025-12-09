@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static com.osmerion.optin.tools.apt.util.StringFileObjectFactory.*;
 import static org.assertj.core.api.Assertions.*;
 
-public final class RecordTest extends AbstractFunctionalTest {
+final class RecordTest extends AbstractFunctionalTest {
 
     private static Stream<Arguments> provideComponentTypeArguments() {
         return Stream.of(
