@@ -1,6 +1,20 @@
+public final class com/osmerion/optin/tools/gradle/Level : java/lang/Enum {
+	public static final field ERROR Lcom/osmerion/optin/tools/gradle/Level;
+	public static final field WARNING Lcom/osmerion/optin/tools/gradle/Level;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/osmerion/optin/tools/gradle/Level;
+	public static fun values ()[Lcom/osmerion/optin/tools/gradle/Level;
+}
+
 public abstract interface class com/osmerion/optin/tools/gradle/OptInExtension {
 	public abstract fun getArtifactGroup ()Lorg/gradle/api/provider/Property;
 	public abstract fun getArtifactVersion ()Lorg/gradle/api/provider/Property;
+	public abstract fun requireOptIn (Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;)V
+	public static synthetic fun requireOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+}
+
+public final class com/osmerion/optin/tools/gradle/OptInExtension$DefaultImpls {
+	public static synthetic fun requireOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
 }
 
 public class com/osmerion/optin/tools/gradle/plugins/OptInPlugin : org/gradle/api/Plugin {
