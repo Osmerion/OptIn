@@ -38,10 +38,14 @@ import java.util.*;
 @SupportedOptions({
     Configuration.OPT_RequiresOptIn
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class OptInProcessor extends AbstractProcessor {
 
     private @Nullable OptInProcessingContextImpl processingContext;
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latestSupported();
+    }
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
