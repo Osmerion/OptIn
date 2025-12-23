@@ -5,7 +5,9 @@
 [![JavaDoc](https://img.shields.io/maven-central/v/com.osmerion.optin/opt-in.svg?style=for-the-badge&label=JavaDoc&color=blue)](https://javadoc.io/doc/com.osmerion.optin/opt-in)
 ![Java](https://img.shields.io/badge/Java-17-green.svg?style=for-the-badge&color=b07219&logo=Java)
 
-!TODO
+A standard for declaring and working with APIs that require explicit opt-in in Java.
+
+[Learn more!](https://osmerion.github.io/OptIn)
 
 
 ## Building from source
@@ -39,6 +41,15 @@ Additionally `tasks` may be used to print a list of all available tasks.
 
 
 ## License
+
+### Credits
+
+This project was heavily inspired by and is compatible with [Kotlin's mechanism for opt-in requirements](https://kotlinlang.org/docs/opt-in-requirements.html).
+It aims to introduce a common, more easily accessible standard for opt-in requirements to the Java ecosystem to bolster
+code evolution practices with robust static analysis.
+
+
+### OptIn
 
 ```
 Copyright 2022-2025 Leon Linhart
