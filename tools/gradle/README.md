@@ -6,26 +6,4 @@
 The OptIn Gradle plugin simplifies working with OptIn by automatically registering of the [OptIn Annotation Processor](../apt)
 for all applicable source sets.
 
-
-## Usage
-
-```kotlin
-plugins {
-    id("com.osmerion.opt-in") version "<latest>"
-}
-```
-
-
-## Configuration
-
-The plugin also registers the `optIn` project extension which can be used to customize the plugin's behavior.
-
-```kotlin
-optIn {
-    /* The group name of the GAV coordinates for the OptIn artifacts. */
-    artifactGroup = "com.osmerion.optin"
-    
-    /* The version of the GAV coordinates for the OptIn artifacts. */
-    artifactVersion = "<latest>"
-}
-```
+[Learn more!](http://osmerion.github.io/OptIn/docs/tooling/gradle)
