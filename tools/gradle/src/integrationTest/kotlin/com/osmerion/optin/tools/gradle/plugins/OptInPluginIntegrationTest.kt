@@ -66,7 +66,7 @@ class OptInPluginIntegrationTest {
         project.pluginManager.apply(JavaLibraryPlugin::class.java)
 
         val optInExtension = project.extensions.getByType<OptInExtension>()
-        optInExtension.requireOptIn("com.google.common.annotations.Beta")
+        optInExtension.requiresOptIn("com.google.common.annotations.Beta")
 
         val sourceSets = project.extensions.getByType<SourceSetContainer>()
         assertTrue(sourceSets.isNotEmpty())

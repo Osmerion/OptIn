@@ -47,7 +47,7 @@ public interface OptInExtension {
      * useful when working with libraries that have custom annotations (for example) for unstable APIs without
      * first-party support for OptIn:
      * ```
-     * requireOptIn("com.google.common.annotations.Beta")
+     * requiresOptIn("com.google.common.annotations.Beta")
      * ```
      *
      * @param annotation    the fully qualified name of the annotation
@@ -57,7 +57,7 @@ public interface OptInExtension {
      *
      * @since   0.1.0
      */
-    public fun requireOptIn(
+    public fun requiresOptIn(
         annotation: String,
         message: String? = null,
         level: Level = Level.ERROR

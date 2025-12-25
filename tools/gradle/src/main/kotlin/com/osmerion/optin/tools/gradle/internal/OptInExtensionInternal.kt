@@ -22,7 +22,7 @@ internal abstract class OptInExtensionInternal : OptInExtension {
 
     internal val extraMarkerAnnotations = mutableMapOf<String, MarkerAnnotation>()
 
-    override fun requireOptIn(annotation: String, message: String?, level: Level) {
+    override fun requiresOptIn(annotation: String, message: String?, level: Level) {
         require(annotation !in extraMarkerAnnotations)
         require(message == null || ';' !in message) { "The message may not contain ';'." }
 
