@@ -55,4 +55,5 @@ binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibil
 
 # org.jetbrains.kotlin - Kotlin
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kotlin-plugin-samwithreceiver = { id = "org.jetbrains.kotlin.plugin.sam.with.receiver", version.ref = "kotlin" }
