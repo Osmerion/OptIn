@@ -19,11 +19,11 @@ final class RecordTest extends AbstractFunctionalTest {
 
     private static Stream<Arguments> provideComponentTypeArguments() {
         return Stream.of(
-            Arguments.of("MarkedClass", 0),
-            Arguments.of("com.example.producer.gamma.MarkedKotlinClass", "com.example.producer.gamma".length()),
-            Arguments.of("UnmarkedClass.MarkedInnerClass", "UnmarkedClass".length()),
-            Arguments.of("UnmarkedClass.MarkedNestedClass", "UnmarkedClass".length()),
-            Arguments.of("UnmarkedClassWithTypeParameter<MarkedClass>", "UnmarkedClassWithTypeParameter<".length())
+            Arguments.of("MarkedClass", "com.example.producer.alpha.AlphaMarker", 0),
+            Arguments.of("com.example.producer.gamma.MarkedKotlinClass", "com.example.producer.gamma.KotlinMarker", "com.example.producer.gamma".length()),
+            Arguments.of("UnmarkedClass.MarkedInnerClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
+            Arguments.of("UnmarkedClass.MarkedNestedClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
+            Arguments.of("UnmarkedClassWithTypeParameter<MarkedClass>", "com.example.producer.alpha.AlphaMarker", "UnmarkedClassWithTypeParameter<".length())
         );
     }
 
@@ -175,7 +175,7 @@ final class RecordTest extends AbstractFunctionalTest {
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_Undeclared(String typeName, int diagnosticOffset) {
+    void testRecordComponent_Undeclared(String typeName, String markerName, int diagnosticOffset) {
         SourceFile record = createJavaFileObject(
             "com.example.TestRecord",
             """
@@ -197,9 +197,9 @@ final class RecordTest extends AbstractFunctionalTest {
                     .hasSize(1)
                     .satisfiesExactly(dm -> assertThat(dm.getMessage().replace("\r\n", "\n"))
                         .contains("""
-                            TestRecord.java:5: error: Undeclared optionality: com.example.producer.alpha.AlphaMarker
+                            TestRecord.java:5: error: Undeclared optionality: %s
                             public record TestRecord(%s component) {}
-                                                     %s^""".formatted(typeName, " ".repeat(diagnosticOffset))))
+                                                     %s^""".formatted(markerName, typeName, " ".repeat(diagnosticOffset))))
             );
     }
 
