@@ -127,55 +127,81 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
         List<ConsentAnnotation> markers = new ArrayList<>();
 
         for (AnnotationMirror annotationMirror : annotationMirrors) {
-            ConsentAnnotation marker = deriveOptInMarker(annotationMirror);
-            if (marker != null) {
-                markers.add(marker);
+            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(annotationMirror);
+
+            if (!optInMarkers.isEmpty()) {
+                markers.addAll(optInMarkers);
                 continue;
             }
 
-            marker = deriveRequirementMarker(annotationMirror);
+            RequirementAnnotation marker = this.deriveRequirementMarker(annotationMirror);
             if (marker != null) markers.add(marker);
         }
 
         return List.copyOf(markers);
     }
 
-    @Nullable
-    private OptInAnnotation deriveOptInMarker(AnnotationMirror mirror) {
+    private List<? extends ConsentAnnotation> deriveOptInMarkers(AnnotationMirror mirror) {
+        //noinspection NullableProblems
+        return this.unwrapRepeatedOptIns(mirror).stream()
+            .map(unwrappedMirror -> {
+                String annotationFqName = unwrappedMirror.getAnnotationType().toString();
+
+                Function<String, OptInAnnotation> markerFactory;
+                String markerClassValueName;
+
+                if (OptInProcessingContext.OPT_IN_FQ_NAME.equals(annotationFqName)) {
+                    markerFactory = OptInAnnotation.JavaOptInAnnotation::new;
+                    markerClassValueName = "value";
+                } else if (OptInProcessingContext.KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
+                    markerFactory = OptInAnnotation.KotlinOptInAnnotation::new;
+                    markerClassValueName = "markerValue";
+                } else {
+                    return null;
+                }
+
+                Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(unwrappedMirror);
+
+                AnnotationValue markerValue = values.entrySet().stream()
+                    .filter(entry -> markerClassValueName.contentEquals(entry.getKey().getSimpleName()))
+                    .findAny()
+                    .orElseThrow()
+                    .getValue();
+
+                if (!(markerValue.getValue() instanceof TypeMirror markerValueTypeMirror)) {
+                    /*
+                     * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
+                     * in a successful compilation.)
+                     *
+                     * (1) This can happen if a file is not on the classpath, imports are missing, etc.
+                     */
+                    return null;
+                }
+
+                return markerFactory.apply(markerValueTypeMirror.toString());
+            })
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<AnnotationMirror> unwrapRepeatedOptIns(AnnotationMirror mirror) {
         String annotationFqName = mirror.getAnnotationType().toString();
+        return switch (annotationFqName) {
+            case OptInProcessingContext.OPT_IN_REPEATED_FQ_NAME, OptInProcessingContext.KOTLIN_OPT_IN_REPEATED_FQ_NAME -> {
+                if (!(mirror.getElementValues().entrySet().stream()
+                    .filter(it -> "value".contentEquals(it.getKey().getSimpleName()))
+                    .map(Map.Entry::getValue)
+                    .findAny()
+                    .orElseThrow()
+                    .getValue() instanceof List<?> annotationValue)) {
+                    throw new IllegalStateException();
+                }
 
-        Function<String, OptInAnnotation> markerFactory;
-        String markerClassValueName;
-
-        if (OptInProcessingContext.OPT_IN_FQ_NAME.equals(annotationFqName)) {
-            markerFactory = OptInAnnotation.JavaOptInAnnotation::new;
-            markerClassValueName = "value";
-        } else if (OptInProcessingContext.KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
-            markerFactory = OptInAnnotation.KotlinOptInAnnotation::new;
-            markerClassValueName = "markerValue";
-        } else {
-            return null;
-        }
-
-        Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(mirror);
-
-        AnnotationValue markerValue = values.entrySet().stream()
-            .filter(entry -> markerClassValueName.contentEquals(entry.getKey().getSimpleName()))
-            .findAny()
-            .orElseThrow()
-            .getValue();
-
-        if (!(markerValue.getValue() instanceof TypeMirror markerValueTypeMirror)) {
-            /*
-             * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
-             * in a successful compilation.)
-             *
-             * (1) This can happen if a file is not on the classpath, imports are missing, etc.
-             */
-            return null;
-        }
-
-        return markerFactory.apply(markerValueTypeMirror.toString());
+                yield (List<AnnotationMirror>) annotationValue;
+            }
+            default -> List.of(mirror);
+        };
     }
 
 }

@@ -20,6 +20,7 @@ final class RecordTest extends AbstractFunctionalTest {
     private static Stream<Arguments> provideComponentTypeArguments() {
         return Stream.of(
             Arguments.of("MarkedClass", 0),
+            Arguments.of("com.example.producer.gamma.MarkedKotlinClass", "com.example.producer.gamma".length()),
             Arguments.of("UnmarkedClass.MarkedInnerClass", "UnmarkedClass".length()),
             Arguments.of("UnmarkedClass.MarkedNestedClass", "UnmarkedClass".length()),
             Arguments.of("UnmarkedClassWithTypeParameter<MarkedClass>", "UnmarkedClassWithTypeParameter<".length())
@@ -131,9 +132,11 @@ final class RecordTest extends AbstractFunctionalTest {
             package com.example;
             
             import com.example.producer.alpha.*;
+            import com.example.producer.gamma.*;
             import com.osmerion.optin.*;
             
             @OptIn(AlphaMarker.class)
+            @OptIn(KotlinMarker.class)
             public record TestRecord(%s component) {}
             """,
             typeName
@@ -154,8 +157,10 @@ final class RecordTest extends AbstractFunctionalTest {
             package com.example;
             
             import com.example.producer.alpha.*;
+            import com.example.producer.gamma.*;
             
             @AlphaMarker
+            @KotlinMarker
             public record TestRecord(%s component) {}
             """,
             typeName

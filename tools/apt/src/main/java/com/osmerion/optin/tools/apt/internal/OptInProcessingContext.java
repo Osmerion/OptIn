@@ -34,9 +34,11 @@ import java.util.EnumSet;
 public interface OptInProcessingContext {
 
     String OPT_IN_FQ_NAME = "com.osmerion.optin.OptIn";
-    String KOTLIN_OPT_IN_FQ_NAME = "kotlin.OptIn";
-
+    String OPT_IN_REPEATED_FQ_NAME = "com.osmerion.optin.OptIn.Repeated";
     String REQUIRES_OPT_IN_FQ_NAME = "com.osmerion.optin.RequiresOptIn";
+
+    String KOTLIN_OPT_IN_FQ_NAME = "kotlin.OptIn";
+    String KOTLIN_OPT_IN_REPEATED_FQ_NAME = "kotlin.OptIn.Container";
     String KOTLIN_REQUIRES_OPT_IN_FQ_NAME = "kotlin.RequiresOptIn";
 
     ElementType[] DEFAULT_ANNOTATION_TARGETS = new ElementType[] {
