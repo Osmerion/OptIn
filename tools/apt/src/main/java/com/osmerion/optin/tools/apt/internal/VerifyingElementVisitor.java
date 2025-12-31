@@ -187,8 +187,13 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
     @Override
     public Void visitVariable(VariableElement element, VerificationContext context) {
         /*
-         * We validate record components already and don't need to validate the generated fields.
-         * See also https://bugs.openjdk.org/browse/JDK-8251375 (for why we can't nicely filter here)
+         * We validate record components and don't want to validate the generated fields as this leads to redundant
+         * checks and reports. However, generated record methods and fields are not marked in bytecode. ACC_MANDATED is
+         * generally used inconsistently (JDK-8251375). So, instead, we utilize the restriction that records cannot have
+         * non-static fields (JLS 17 §8.10.2) and skip validation for all non-static variable elements inside records.
+         *
+         * https://bugs.openjdk.org/browse/JDK-8251375
+         * https://docs.oracle.com/javase/specs/jls/se17/html/jls-8.html#jls-8.10
          */
         Element enclosingElement = element.getEnclosingElement();
         if (enclosingElement.getKind() == ElementKind.RECORD && !element.getModifiers().contains(Modifier.STATIC)) {
