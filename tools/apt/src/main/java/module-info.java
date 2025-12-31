@@ -27,6 +27,8 @@ module com.osmerion.optin.tools.apt {
     requires java.compiler;
     requires jdk.compiler;
 
+    requires kotlin.metadata.jvm;
+    requires kotlin.stdlib;
     requires org.jspecify;
 
     exports com.osmerion.optin.tools.apt;

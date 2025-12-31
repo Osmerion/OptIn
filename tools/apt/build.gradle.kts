@@ -112,6 +112,7 @@ publishing {
 
 dependencies {
     implementation(project(":opt-in"))
+    implementation(buildDeps.kotlin.metadata.jvm)
     implementation(libs.jspecify)
 
     compileTestingClasspath(buildDeps.kotlin.stdlib)

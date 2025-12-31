@@ -18,6 +18,7 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.
 
 # org.jetbrains.kotlin - Kotlin
 # https://github.com/JetBrains/kotlin
+kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 
 # org.junit - JUnit

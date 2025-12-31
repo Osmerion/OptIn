@@ -38,6 +38,9 @@ public interface VerificationContext {
         return TreePath.getPath(this.getCompilationUnit(), tree);
     }
 
+    /** {@return {@code true} if the current context is for a Kotlin file, or {@code false} otherwise} */
+    boolean isKotlin();
+
     /**
      * {@return {@code true} if the given requirement is satisfied in this context, or {@code false} otherwise}
      *
@@ -77,6 +80,11 @@ final class VerificationContextDelegate implements VerificationContext {
     @Override
     public TreePath getPath(Tree tree) {
         return this.delegate.getPath(tree);
+    }
+
+    @Override
+    public boolean isKotlin() {
+        return this.delegate.isKotlin();
     }
 
     @Override
