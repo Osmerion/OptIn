@@ -155,7 +155,7 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
                     markerClassValueName = "value";
                 } else if (OptInProcessingContext.KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
                     markerFactory = OptInAnnotation.KotlinOptInAnnotation::new;
-                    markerClassValueName = "markerValue";
+                    markerClassValueName = "markerClass";
                 } else {
                     return null;
                 }
