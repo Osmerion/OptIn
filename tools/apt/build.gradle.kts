@@ -79,6 +79,7 @@ testing {
 
             dependencies {
                 implementation(project())
+                implementation(buildDeps.compile.testing)
                 implementation(buildDeps.jetbrains.annotations)
                 implementation(buildDeps.kotlin.compile.testing)
             }

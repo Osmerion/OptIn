@@ -4,6 +4,10 @@ kotlin = "2.3.0"
 
 
 [libraries]
+# com.google.testing.compile:compile-testing - Compile Testing
+# https://github.com/google/compile-testing
+compile-testing = { module = "com.google.testing.compile:compile-testing", version = "0.23.0" }
+
 # dev.zacsweers.kctfork - Kotlin Compile Testing
 # https://github.com/ZacSweers/kotlin-compile-testing
 kotlin-compile-testing = { module = "dev.zacsweers.kctfork:core", version = "0.12.1" }

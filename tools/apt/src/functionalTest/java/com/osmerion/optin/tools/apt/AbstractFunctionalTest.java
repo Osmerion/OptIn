@@ -1,31 +1,47 @@
 /*
- * Copyright (c) 2022-2025 Leon Linhart
- * All rights reserved.
+ * Copyright 2022-2025 Leon Linhart
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.osmerion.optin.tools.apt;
 
-import com.tschuchort.compiletesting.JvmCompilationResult;
-import com.tschuchort.compiletesting.KotlinCompilation;
-import com.tschuchort.compiletesting.SourceFile;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import com.osmerion.optin.tools.apt.compiler.Language;
+import com.osmerion.optin.tools.apt.compiler.SourceFile;
 
 public abstract class AbstractFunctionalTest {
 
-    protected final JvmCompilationResult compile(SourceFile... sources) {
-        String classpathPropertyValue = System.getProperty("COMPILE_TESTING_CLASSPATH");
-        List<File> classpath = Arrays.stream(classpathPropertyValue.split(File.pathSeparator)).map(File::new).toList();
+    protected static SourceFile createJavaFile(
+        String fqName,
+        @org.intellij.lang.annotations.Language("java") String source,
+        String... args
+    ) {
+        return createSourceFile(Language.JAVA, fqName, source, args);
+    }
 
-        KotlinCompilation compilation = new KotlinCompilation();
-        compilation.setClasspaths(classpath);
-        compilation.setJavacArguments(List.of("--release", "17"));
-        compilation.setAnnotationProcessors(List.of(new OptInProcessor()));
-        compilation.setSources(Arrays.asList(sources));
-        compilation.setInheritClassPath(true);
+    protected static SourceFile createKotlinFile(
+        String fqName,
+        @org.intellij.lang.annotations.Language("kotlin") String source,
+        String... args
+    ) {
+        return createSourceFile(Language.KOTLIN, fqName, source, args);
+    }
 
-        return compilation.compile();
+    private static SourceFile createSourceFile(Language language, String fqName, String source, String... args) {
+        if (args.length != 0) {
+            source = String.format(source, (Object[]) args);
+        }
+
+        return new SourceFile(language, fqName, source);
     }
 
 }
