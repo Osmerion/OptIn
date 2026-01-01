@@ -21,7 +21,7 @@ plugins {
     `jvm-test-suite`
 }
 
-val compileTestingClasspath = configurations.create("compileTestingClasspath") {
+val compileTestingClasspath by configurations.registering {
     isCanBeConsumed = false
     isCanBeResolved = true
 }
@@ -69,7 +69,7 @@ testing {
                     )
 
                     // Ensure that the compile-testing classpath is available to the test task
-                    val compileTestingClasspath: FileCollection = compileTestingClasspath
+                    val compileTestingClasspath: FileCollection = compileTestingClasspath.get()
 
                     doFirst {
                         systemProperty("COMPILE_TESTING_CLASSPATH", compileTestingClasspath.asPath)
