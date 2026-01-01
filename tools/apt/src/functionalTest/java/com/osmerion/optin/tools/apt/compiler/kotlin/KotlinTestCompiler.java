@@ -72,4 +72,9 @@ public final class KotlinTestCompiler implements TestCompiler {
         return new Compilation(status, diagnosticMessages);
     }
 
+    @Override
+    public String toString() {
+        return "kotlinc";
+    }
+
 }

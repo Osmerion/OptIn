@@ -20,9 +20,14 @@ import com.osmerion.optin.tools.apt.compiler.kotlin.KotlinTestCompiler;
 
 public final class Compilers {
 
-    private static final TestCompiler javac = new JavaTestCompiler();
+    private static final TestCompiler javac = new JavaTestCompiler(false);
     public static TestCompiler javac() {
         return javac;
+    }
+
+    private static final TestCompiler javacModular = new JavaTestCompiler(true);
+    public static TestCompiler javacModular() {
+        return javacModular;
     }
 
     private static final TestCompiler kotlinc = new KotlinTestCompiler();

@@ -25,12 +25,26 @@ import java.util.List;
 
 public final class JavaTestCompiler implements TestCompiler {
 
+    private final boolean useModulePath;
+
+    public JavaTestCompiler(boolean useModulePath) {
+        this.useModulePath = useModulePath;
+    }
+
     @Override
     public Compilation compile(SourceFile... sources) {
         com.google.testing.compile.Compiler compiler = com.google.testing.compile.Compiler.javac()
-            .withClasspath(classpath)
             .withOptions("--release", 17)
+            .withOptions("-Xplugin:optIn")
             .withProcessors(new OptInProcessor());
+
+        System.out.println(classpathPropertyValue);
+
+        if (useModulePath) {
+            compiler = compiler.withOptions("--module-path", "\"" + classpathPropertyValue + "\"");
+        } else {
+            compiler = compiler.withClasspath(classpath);
+        }
 
         List<JavaFileObject> jfos = Arrays.stream(sources)
             .map(sourceFile -> {
@@ -58,6 +72,11 @@ public final class JavaTestCompiler implements TestCompiler {
             .toList();
 
         return new Compilation(status, diagnosticMessages);
+    }
+
+    @Override
+    public String toString() {
+        return "javac[modular=" + this.useModulePath + "]";
     }
 
 }
