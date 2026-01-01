@@ -22,7 +22,6 @@ import com.osmerion.optin.tools.apt.compiler.*;
 import javax.tools.JavaFileObject;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 public final class JavaTestCompiler implements TestCompiler {
 
@@ -36,8 +35,6 @@ public final class JavaTestCompiler implements TestCompiler {
         List<JavaFileObject> jfos = Arrays.stream(sources)
             .map(sourceFile -> {
                 if (sourceFile.language() != Language.JAVA) throw new IllegalArgumentException();
-
-//                String fqName = sourceFile.fqName().replaceAll("\\.", "/") + ".java";
                 return JavaFileObjects.forSourceString(sourceFile.fqName(), sourceFile.source());
             })
             .toList();
@@ -55,9 +52,8 @@ public final class JavaTestCompiler implements TestCompiler {
                     case WARNING, MANDATORY_WARNING -> DiagnosticMessage.Severity.WARNING;
                     case ERROR -> DiagnosticMessage.Severity.ERROR;
                 };
-                String message = diagnostic.getMessage(Locale.ROOT);
 
-                return new DiagnosticMessage(severity, message);
+                return new DiagnosticMessage(severity, diagnostic.toString());
             })
             .toList();
 
