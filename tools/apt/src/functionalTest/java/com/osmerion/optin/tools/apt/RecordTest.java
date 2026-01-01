@@ -1,10 +1,21 @@
 /*
- * Copyright (c) 2022-2023 Leon Linhart
- * All rights reserved.
+ * Copyright 2022-2025 Leon Linhart
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.osmerion.optin.tools.apt;
 
-import com.tschuchort.compiletesting.*;
+import com.osmerion.optin.tools.apt.compiler.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -12,8 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static com.osmerion.optin.tools.apt.util.StringFileObjectFactory.*;
-import static org.assertj.core.api.Assertions.*;
+import static com.osmerion.optin.tools.apt.compiler.Assertions.*;
 
 final class RecordTest extends AbstractFunctionalTest {
 
@@ -29,7 +39,7 @@ final class RecordTest extends AbstractFunctionalTest {
 
     @Test
     void testCanonicalCtor_OptIn() {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
@@ -48,23 +58,21 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        assertThat(this.compile(record))
-            .satisfies(
-                compilation -> assertThat(compilation.getExitCode())
-                    .isEqualTo(KotlinCompilation.ExitCode.OK)
-            );
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasSucceeded();
     }
 
     @Test
     void testCanonicalCtor_Propagation() {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
             
             import com.example.producer.alpha.*;
             
-            public record TestRecord() {
+            public record TestRecord(String s) {
             
                 @AlphaMarker
                 public TestRecord {
@@ -75,16 +83,14 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        assertThat(this.compile(record))
-            .satisfies(
-                compilation -> assertThat(compilation.getExitCode())
-                    .isEqualTo(KotlinCompilation.ExitCode.OK)
-            );
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasSucceeded();
     }
 
     @Test
     void testCanonicalCtor_Undeclared() {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
@@ -101,20 +107,19 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        assertThat(this.compile(record))
-            .satisfies(
-                compilation -> assertThat(compilation.getExitCode())
-                    .isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR),
-                compilation -> assertThat(compilation.getDiagnosticMessages())
-                    .filteredOn(dm -> dm.getSeverity() == DiagnosticSeverity.ERROR)
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasFailed()
+            .satisfies(compilation -> assertThat(compilation.diagnostics())
+                    .filteredOn(dm -> dm.severity() == DiagnosticMessage.Severity.ERROR)
                     .hasSize(2)
                     .satisfiesExactly(
-                        dm -> assertThat(dm.getMessage().replace("\r\n", "\n"))
+                        dm -> assertThat(dm.message().replace("\r\n", "\n"))
                             .contains("""
                                 TestRecord.java:8: error: Undeclared optionality: com.example.producer.alpha.AlphaMarker
                                         MarkedClass markedClass = new MarkedClass();
                                         ^"""),
-                        dm -> assertThat(dm.getMessage().replace("\r\n", "\n")
+                        dm -> assertThat(dm.message().replace("\r\n", "\n")
                             .contains("""
                                 TestRecord.java:8: error: Undeclared optionality: com.example.producer.alpha.AlphaMarker
                                         MarkedClass markedClass = new MarkedClass();
@@ -126,7 +131,7 @@ final class RecordTest extends AbstractFunctionalTest {
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
     void testRecordComponent_OptIn(String typeName) {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
@@ -142,16 +147,15 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        assertThat(this.compile(record))
-            .satisfies(compilation -> assertThat(compilation.getExitCode())
-                .isEqualTo(KotlinCompilation.ExitCode.OK)
-            );
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasSucceeded();
     }
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
     void testRecordComponent_Propagation(String typeName) {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
@@ -166,17 +170,15 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        assertThat(this.compile(record))
-            .satisfies(
-                compilation -> assertThat(compilation.getExitCode())
-                    .isEqualTo(KotlinCompilation.ExitCode.OK)
-            );
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasSucceeded();
     }
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
     void testRecordComponent_Undeclared(String typeName, String markerName, int diagnosticOffset) {
-        SourceFile record = createJavaFileObject(
+        SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
             package com.example;
@@ -188,14 +190,13 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        assertThat(this.compile(record))
-            .satisfies(
-                compilation -> assertThat(compilation.getExitCode())
-                    .isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR),
-                compilation -> assertThat(compilation.getDiagnosticMessages())
-                    .filteredOn(dm -> dm.getSeverity() == DiagnosticSeverity.ERROR)
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasFailed()
+            .satisfies(compilation -> assertThat(compilation.diagnostics())
+                    .filteredOn(dm -> dm.severity() == DiagnosticMessage.Severity.ERROR)
                     .hasSize(1)
-                    .satisfiesExactly(dm -> assertThat(dm.getMessage().replace("\r\n", "\n"))
+                    .satisfiesExactly(dm -> assertThat(dm.message().replace("\r\n", "\n"))
                         .contains("""
                             TestRecord.java:5: error: Undeclared optionality: %s
                             public record TestRecord(%s component) {}
