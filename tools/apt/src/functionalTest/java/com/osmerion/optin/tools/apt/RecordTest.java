@@ -16,7 +16,6 @@
 package com.osmerion.optin.tools.apt;
 
 import com.osmerion.optin.tools.apt.compiler.*;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,18 +26,27 @@ import static com.osmerion.optin.tools.apt.compiler.Assertions.*;
 
 final class RecordTest extends AbstractFunctionalTest {
 
-    private static Stream<Arguments> provideComponentTypeArguments() {
+    private static Stream<Arguments> provideCompilers() {
         return Stream.of(
-            Arguments.of("MarkedClass", "com.example.producer.alpha.AlphaMarker", 0),
-            Arguments.of("com.example.producer.gamma.MarkedKotlinClass", "com.example.producer.gamma.KotlinMarker", "com.example.producer.gamma".length()),
-            Arguments.of("UnmarkedClass.MarkedInnerClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
-            Arguments.of("UnmarkedClass.MarkedNestedClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
-            Arguments.of("UnmarkedClassWithTypeParameter<MarkedClass>", "com.example.producer.alpha.AlphaMarker", "UnmarkedClassWithTypeParameter<".length())
+            Arguments.of(Compilers.javac()),
+            Arguments.of(Compilers.kotlinc())
         );
     }
 
-    @Test
-    void testCanonicalCtor_OptIn() {
+    private static Stream<Arguments> provideComponentTypeArguments() {
+        return Stream.of(Compilers.javac(), Compilers.kotlinc())
+            .flatMap(compiler -> Stream.of(
+                Arguments.of(compiler, "MarkedClass", "com.example.producer.alpha.AlphaMarker", 0),
+                Arguments.of(compiler, "com.example.producer.gamma.MarkedKotlinClass", "com.example.producer.gamma.KotlinMarker", "com.example.producer.gamma".length()),
+                Arguments.of(compiler, "UnmarkedClass.MarkedInnerClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
+                Arguments.of(compiler, "UnmarkedClass.MarkedNestedClass", "com.example.producer.alpha.AlphaMarker", "UnmarkedClass".length()),
+                Arguments.of(compiler, "UnmarkedClassWithTypeParameter<MarkedClass>", "com.example.producer.alpha.AlphaMarker", "UnmarkedClassWithTypeParameter<".length())
+            ));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testCanonicalCtor_OptIn(TestCompiler compiler) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -58,13 +66,13 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasSucceeded();
     }
 
-    @Test
-    void testCanonicalCtor_Propagation() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testCanonicalCtor_Propagation(TestCompiler compiler) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -83,13 +91,13 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasSucceeded();
     }
 
-    @Test
-    void testCanonicalCtor_Undeclared() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testCanonicalCtor_Undeclared(TestCompiler compiler) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -107,7 +115,6 @@ final class RecordTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasFailed()
             .satisfies(compilation -> assertThat(compilation.diagnostics())
@@ -130,7 +137,7 @@ final class RecordTest extends AbstractFunctionalTest {
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_OptIn(String typeName) {
+    void testRecordComponent_OptIn(TestCompiler compiler, String typeName) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -147,14 +154,13 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasSucceeded();
     }
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_Propagation(String typeName) {
+    void testRecordComponent_Propagation(TestCompiler compiler, String typeName) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -170,14 +176,13 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasSucceeded();
     }
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_Undeclared(String typeName, String markerName, int diagnosticOffset) {
+    void testRecordComponent_Undeclared(TestCompiler compiler, String typeName, String markerName, int diagnosticOffset) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -190,7 +195,6 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasFailed()
             .satisfies(compilation -> assertThat(compilation.diagnostics())
