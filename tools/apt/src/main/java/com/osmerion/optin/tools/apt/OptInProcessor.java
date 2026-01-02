@@ -40,7 +40,13 @@ import java.util.*;
 })
 public final class OptInProcessor extends AbstractProcessor {
 
+    private static boolean isRunningInKapt() {
+        StackWalker stackWalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        return stackWalker.walk(stream -> stream.anyMatch(stackFrame -> stackFrame.getClassName().startsWith("org.jetbrains.kotlin.kapt")));
+    }
+
     private @Nullable OptInProcessingContextImpl processingContext;
+    private @Nullable Boolean isRunningInKapt;
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -50,6 +56,9 @@ public final class OptInProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+
+        this.isRunningInKapt = isRunningInKapt();
+        if (!this.isRunningInKapt) return;
 
         Configuration configuration = Configuration.parse(processingEnv.getOptions());
 
@@ -63,6 +72,21 @@ public final class OptInProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        Boolean isRunningInKapt = this.isRunningInKapt;
+        if (isRunningInKapt == null) throw new IllegalStateException("OptInProcessor has not been initialized");
+
+        /*
+         * The annotation processor runs too early to verify the tree without creating unintended side effects for
+         * javac. Specifically, forcefully triggering code attribution out of order by retrieving elements for tree
+         * nodes interacts poorly with some synthetic constructs (especially generated record members). Thus, we run the
+         * verification in a javac plugin instead.
+         *
+         * However, when running via Kapt during kotlinc, the analysis is sufficiently advanced and the stubs generated
+         * by kapt allow us to easily verify Kotlin and Java code. Thus, we reuse the annotation processor for Kotlin
+         * support rather than writing a Kotlin compiler plugin.
+         */
+        if (!this.isRunningInKapt) return false;
+
         OptInProcessingContextImpl processingContext = this.processingContext;
         if (processingContext == null) throw new IllegalStateException("OptInProcessor has not been initialized");
 
