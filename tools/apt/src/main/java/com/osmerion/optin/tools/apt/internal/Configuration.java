@@ -26,6 +26,10 @@ public final class Configuration {
         return new Configuration();
     }
 
+    public static Configuration parse(String... args) {
+        return new Configuration();
+    }
+
     public List<String> getExtraMarkerAnnotations() {
         return null;
     }

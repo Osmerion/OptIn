@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 import com.osmerion.optin.tools.apt.OptInProcessor;
+import com.osmerion.optin.tools.apt.internal.OptInPlugin;
+import com.sun.source.util.Plugin;
 import org.jspecify.annotations.NullMarked;
 
 import javax.annotation.processing.Processor;
 
-/** Defines an annotation processor to validate opt-in marker annotations and their usages. */
+/**
+ * Defines an annotation processor and a javac plugin to validate opt-in requirements in code written in Java and Kotlin
+ * (via kapt).
+ */
 @NullMarked
 module com.osmerion.optin.tools.apt {
 
@@ -33,6 +38,7 @@ module com.osmerion.optin.tools.apt {
 
     exports com.osmerion.optin.tools.apt;
 
+    provides Plugin with OptInPlugin;
     provides Processor with OptInProcessor;
 
 }

@@ -24,6 +24,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import kotlin.Metadata;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
@@ -38,7 +39,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     private final Configuration configuration;
 
-    private final Messager messager;
+    private final @Nullable Messager messager;
     private final Trees trees;
 
     private final GatheringElementVisitor gatheringElementVisitor;
@@ -50,7 +51,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     public OptInProcessingContextImpl(
         Configuration configuration,
         Elements elements,
-        Messager messager,
+        @Nullable Messager messager,
         Trees trees,
         Types types
     ) {
@@ -97,6 +98,9 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         return Set.copyOf(requirements);
     }
 
+    /**
+     * @param element   the root element to verify
+     */
     public void process(Element element) {
         Metadata kotlinMetadata = element.getAnnotation(Metadata.class);
         boolean isKotlinDeclaration = (kotlinMetadata != null);
@@ -125,7 +129,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     }
 
     @Override
-    public Messager messager() {
+    public @Nullable Messager messager() {
         return this.messager;
     }
 
