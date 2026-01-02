@@ -18,7 +18,11 @@ package com.osmerion.optin.tools.apt;
 import com.osmerion.optin.tools.apt.compiler.Compilers;
 import com.osmerion.optin.tools.apt.compiler.SourceFile;
 import com.osmerion.optin.tools.apt.compiler.TestCompiler;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static com.osmerion.optin.tools.apt.compiler.Assertions.assertThat;
 
@@ -29,8 +33,16 @@ import static com.osmerion.optin.tools.apt.compiler.Assertions.assertThat;
  */
 public final class JavaTest extends AbstractFunctionalTest {
 
-    @Test
-    void testOptIn_Kotlin() {
+    private static Stream<Arguments> provideCompilers() {
+        return Stream.of(
+            Arguments.of(Compilers.javac()),
+            Arguments.of(Compilers.kotlinc())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testOptIn_Kotlin(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -58,14 +70,14 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker, usage))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.OptIn should be used in Java code");
     }
 
-    @Test
-    void testOptIn_Osmerion() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testOptIn_Osmerion(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -93,13 +105,13 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker, usage))
             .hasSucceeded();
     }
 
-    @Test
-    void testRequiresOptIn_Kotlin() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testRequiresOptIn_Kotlin(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -110,14 +122,14 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.RequiresOptIn should be used in Java code");
     }
 
-    @Test
-    void testRequiresOptIn_Osmerion() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testRequiresOptIn_Osmerion(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -135,13 +147,13 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker))
             .hasSucceeded();
     }
 
-    @Test
-    void testSubtypingRequiresOptIn_Kotlin() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testSubtypingRequiresOptIn_Kotlin(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -169,14 +181,14 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker, usage))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.SubtypingRequiresOptIn should be used in Java code");
     }
 
-    @Test
-    void testSubtypingRequiresOptIn_Osmerion() {
+    @ParameterizedTest
+    @MethodSource("provideCompilers")
+    void testSubtypingRequiresOptIn_Osmerion(TestCompiler compiler) {
         SourceFile marker = createJavaFile(
             "com.example.Marker",
             """
@@ -204,7 +216,6 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(marker, usage))
             .hasSucceeded();
     }
