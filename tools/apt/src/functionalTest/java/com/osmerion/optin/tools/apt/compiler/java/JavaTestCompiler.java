@@ -34,8 +34,7 @@ public final class JavaTestCompiler implements TestCompiler {
     @Override
     public Compilation compile(SourceFile... sources) {
         com.google.testing.compile.Compiler compiler = com.google.testing.compile.Compiler.javac()
-            .withOptions("--release", 17)
-            .withOptions("-Xplugin:optIn")
+            .withOptions("--release", 17, "-Xplugin:optIn")
             .withProcessors(new OptInProcessor());
 
         System.out.println(classpathPropertyValue);
