@@ -23,11 +23,12 @@ import org.junit.jupiter.api.Test;
 import static com.osmerion.optin.tools.apt.compiler.Assertions.assertThat;
 
 /**
- * Functional tests to verify that usage of Kotlin's and our annotations are correctly verified in Java compilations.
+ * Functional tests to verify that usage of Kotlin's and our annotations are correctly verified for Java sources in
+ * Kotlin compilations (via Kapt).
  *
  * @author  Leon Linhart
  */
-public final class JavaTest extends AbstractFunctionalTest {
+public final class KaptTest extends AbstractFunctionalTest {
 
     @Test
     void testOptIn_Kotlin() {
@@ -58,7 +59,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker, usage))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.OptIn should be used in Java code");
@@ -93,7 +94,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker, usage))
             .hasSucceeded();
     }
@@ -110,7 +111,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.RequiresOptIn should be used in Java code");
@@ -135,7 +136,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker))
             .hasSucceeded();
     }
@@ -169,7 +170,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker, usage))
             .hasFailed()
             .hasErrorContaining("com.osmerion.optin.SubtypingRequiresOptIn should be used in Java code");
@@ -204,7 +205,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
         );
 
-        TestCompiler compiler = Compilers.javac();
+        TestCompiler compiler = Compilers.kotlinc();
         assertThat(compiler.compile(marker, usage))
             .hasSucceeded();
     }
