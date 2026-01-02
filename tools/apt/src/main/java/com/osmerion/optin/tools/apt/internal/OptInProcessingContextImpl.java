@@ -27,6 +27,7 @@ import kotlin.Metadata;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -129,8 +130,23 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     }
 
     @Override
-    public @Nullable Messager messager() {
-        return this.messager;
+    public void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element) {
+        if (this.messager != null) {
+            this.messager.printMessage(kind, message, element);
+        } else {
+            Tree tree = this.trees.getTree(element);
+            this.trees.printMessage(kind, message, tree, context.getCompilationUnit());
+        }
+    }
+
+    @Override
+    public void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror) {
+        if (this.messager != null) {
+            this.messager.printMessage(kind, message, element, mirror);
+        } else {
+            Tree tree = this.trees.getTree(element, mirror);
+            this.trees.printMessage(kind, message, tree, context.getCompilationUnit());
+        }
     }
 
     @Override

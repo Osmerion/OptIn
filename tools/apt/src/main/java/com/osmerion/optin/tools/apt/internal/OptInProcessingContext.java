@@ -18,11 +18,11 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.Tree;
-import org.jspecify.annotations.Nullable;
 
-import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 import java.lang.annotation.ElementType;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -73,7 +73,9 @@ public interface OptInProcessingContext {
 
     Collection<RequirementAnnotation> getUsageRequirements(TypeMirror type);
 
-    @Nullable Messager messager();
+    void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element);
+
+    void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror);
 
     void reportUnsatisfiedRequirements(VerificationContext context, Collection<RequirementAnnotation> requirements, Tree tree);
 

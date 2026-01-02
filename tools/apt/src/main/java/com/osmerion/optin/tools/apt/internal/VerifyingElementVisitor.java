@@ -129,7 +129,7 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
 
                 if (retentionPolicy != RetentionPolicy.RUNTIME) {
                     String message = "@RequiresOptIn marker annotation must have RUNTIME retention";
-                    this.processingContext.messager().printMessage(Diagnostic.Kind.ERROR, message, element);
+                    this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element);
                 }
 
                 /* 2. Validate targets */
@@ -142,7 +142,7 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
 
                 if (!invalidTargets.isEmpty()) {
                     String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
-                    this.processingContext.messager().printMessage(Diagnostic.Kind.ERROR, message, element);
+                    this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element);
                 }
 
                 // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
@@ -171,7 +171,7 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
                 String message = context.isKotlin() ? OptInProcessingContext.KOTLIN_REQUIRES_OPT_IN_FQ_NAME : OptInProcessingContext.REQUIRES_OPT_IN_FQ_NAME;
                 message += " should be used in " + (context.isKotlin() ? "Kotlin" : "Java") + " code";
 
-                this.processingContext.messager().printMessage(Diagnostic.Kind.WARNING, message, element, markerToRemove);
+                this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element, markerToRemove);
             }
         }
 
