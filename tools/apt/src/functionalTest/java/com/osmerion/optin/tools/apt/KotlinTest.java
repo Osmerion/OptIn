@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static com.osmerion.optin.tools.apt.compiler.Assertions.*;
 
 /**
- * Functional tests to verify that usage of Kotlin's and our annotations are correctly verified in Kotlin code.
+ * Functional tests to verify that usage of Kotlin's and our annotations are correctly verified in Kotlin compilations.
  *
  * @author  Leon Linhart
  */
