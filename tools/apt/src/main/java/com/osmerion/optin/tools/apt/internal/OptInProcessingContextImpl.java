@@ -23,7 +23,6 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import kotlin.Metadata;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Messager;
@@ -103,8 +102,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
      * @param element   the root element to verify
      */
     public void process(Element element) {
-        Metadata kotlinMetadata = element.getAnnotation(Metadata.class);
-        boolean isKotlinDeclaration = (kotlinMetadata != null);
+        boolean isKotlinDeclaration = OptInElementUtil.isKotlin(element);
 
         TreePath rootPath = this.trees.getPath(element);
         VerificationContext verificationContext = new VerificationContext() {
