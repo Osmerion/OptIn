@@ -46,9 +46,16 @@ public final class OptInPlugin implements Plugin {
 
         task.addTaskListener(new TaskListener() {
 
+            private boolean hasRunPostProcessing;
+
             @Override
             public void finished(TaskEvent e) {
                 if (e.getKind() != TaskEvent.Kind.ANALYZE) return;
+
+                if (!this.hasRunPostProcessing) {
+                    this.hasRunPostProcessing = true;
+                    processingContext.postProcess();
+                }
 
                 Element element = e.getTypeElement();
                 processingContext.process(element);

@@ -67,11 +67,11 @@ public interface OptInProcessingContext {
 
     Collection<? extends ConsentAnnotation> getConsentAnnotations(Element element);
 
-    Collection<RequirementAnnotation> getSubtypingRequirementMarkers();
-
     Collection<RequirementAnnotation> getUsageRequirements(Element element);
 
     Collection<RequirementAnnotation> getUsageRequirements(TypeMirror type);
+
+    Collection<RequirementAnnotation> getSubtypingRequirements(Element element);
 
     void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element);
 

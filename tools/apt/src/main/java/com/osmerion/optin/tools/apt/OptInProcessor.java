@@ -36,7 +36,9 @@ import java.util.*;
  */
 @SupportedAnnotationTypes("*")
 @SupportedOptions({
-    Configuration.OPT_RequiresOptIn
+    Configuration.OPT_OptIn,
+    Configuration.OPT_RequiresOptIn,
+    Configuration.OPT_SubtypingRequiresOptIn
 })
 public final class OptInProcessor extends AbstractProcessor {
 
@@ -92,6 +94,15 @@ public final class OptInProcessor extends AbstractProcessor {
 
         for (Element element : roundEnv.getRootElements()) {
             processingContext.process(element);
+        }
+
+        /*
+         * In the last round, we assume that additional source files have been generated. Hence, we can run checkers
+         * that require all source files contributing to the compiler invocation to be observed and available for
+         * introspection (e.g., checkers verifying that CLI options refer to known types).
+         */
+        if (roundEnv.processingOver() && !roundEnv.errorRaised()) {
+            processingContext.postProcess();
         }
 
         return false;
