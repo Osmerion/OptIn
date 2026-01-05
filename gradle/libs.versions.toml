@@ -1,7 +1,7 @@
 [libraries]
 # org.gradle - Gradle
 # https://github.com/gradle/gradle
-gradle-api = { module = "org.gradle.experimental:gradle-public-api", version = "9.0.0" }
+gradle-api = { module = "org.gradle.experimental:gradle-public-api", version = "9.2.1" }
 
 # org.jspecify - JSpecify
 # https://github.com/jspecify/jspecify
