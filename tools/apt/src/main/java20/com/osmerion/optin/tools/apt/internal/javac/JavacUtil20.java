@@ -19,15 +19,15 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-public class JavacUtil20 extends JavacUtil17 {
+public class JavacUtil20 extends JavacUtil18 {
+
+    JavacUtil20(Elements elements, Types types) {
+        super(elements, types);
+    }
 
     @Override
     public boolean isCanonicalConstructor(ExecutableElement element) {
         return this.elements.isCanonicalConstructor(element);
-    }
-
-    JavacUtil20(Elements elements, Types types) {
-        super(elements, types);
     }
 
 }

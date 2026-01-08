@@ -21,6 +21,7 @@ import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -32,9 +33,12 @@ import java.util.Collection;
 public interface VerificationContext {
 
     /** {@return the {@link CompilationUnitTree compilation unit} that is currently being verified} */
-    CompilationUnitTree getCompilationUnit();
+    @Nullable CompilationUnitTree getCompilationUnit();
 
-    default TreePath getPath(Tree tree) {
+    default @Nullable TreePath getPath(Tree tree) {
+        CompilationUnitTree compilationUnit = this.getCompilationUnit();
+        if (compilationUnit == null) return null;
+
         return TreePath.getPath(this.getCompilationUnit(), tree);
     }
 
@@ -57,7 +61,12 @@ public interface VerificationContext {
      * @param annotations   the additional annotations for the annotation context
      */
     default VerificationContext withAnnotations(Collection<? extends ConsentAnnotation> annotations) {
-        return new VerificationContextDelegate(this, annotations);
+        return new VerificationContextDelegate(this, this.getCompilationUnit(), this.isKotlin(), annotations);
+    }
+
+    default VerificationContext withCompilationUnit(CompilationUnitTree compilationUnit, boolean isKotlin) {
+        if (compilationUnit.equals(this.getCompilationUnit())) return this;
+        return new VerificationContextDelegate(this, compilationUnit, isKotlin, null);
     }
 
 }
@@ -65,31 +74,31 @@ public interface VerificationContext {
 final class VerificationContextDelegate implements VerificationContext {
 
     private final VerificationContext delegate;
-    private final Collection<? extends ConsentAnnotation> markers;
+    private final @Nullable CompilationUnitTree compilationUnit;
+    private final boolean isKotlin;
+    private final @Nullable Collection<? extends ConsentAnnotation> markers;
 
-    public VerificationContextDelegate(VerificationContext delegate, Collection<? extends ConsentAnnotation> markers) {
+    public VerificationContextDelegate(VerificationContext delegate, @Nullable CompilationUnitTree compilationUnit, boolean isKotlin, @Nullable Collection<? extends ConsentAnnotation> markers) {
         this.delegate = delegate;
+        this.compilationUnit = compilationUnit;
+        this.isKotlin = isKotlin;
         this.markers = markers;
     }
 
     @Override
     public CompilationUnitTree getCompilationUnit() {
+        if (this.compilationUnit != null) return this.compilationUnit;
         return this.delegate.getCompilationUnit();
     }
 
     @Override
-    public TreePath getPath(Tree tree) {
-        return this.delegate.getPath(tree);
-    }
-
-    @Override
     public boolean isKotlin() {
-        return this.delegate.isKotlin();
+        return this.isKotlin;
     }
 
     @Override
     public boolean isSatisfied(RequirementAnnotation requirements) {
-        return this.markers.stream().anyMatch(it -> it.satisfies(requirements)) || this.delegate.isSatisfied(requirements);
+        return (this.markers != null && this.markers.stream().anyMatch(it -> it.satisfies(requirements))) || this.delegate.isSatisfied(requirements);
     }
 
 }

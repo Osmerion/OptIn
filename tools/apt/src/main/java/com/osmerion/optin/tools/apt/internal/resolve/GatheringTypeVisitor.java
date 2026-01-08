@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.apt.internal;
+package com.osmerion.optin.tools.apt.internal.resolve;
 
+import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
+import com.osmerion.optin.tools.apt.internal.UnknownTypeException;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.type.*;
 import javax.lang.model.util.SimpleTypeVisitor14;
-import java.util.Set;
 
 /**
  * A {@link TypeVisitor} to gather {@link RequirementAnnotation requirements}.
  *
  * @author  Leon Linhart
  */
-final class GatheringTypeVisitor extends SimpleTypeVisitor14<Void, Set<RequirementAnnotation>> {
+public final class GatheringTypeVisitor extends SimpleTypeVisitor14<Void, GatheringContext> {
 
     private final OptInProcessingContext processingContext;
 
@@ -36,103 +37,103 @@ final class GatheringTypeVisitor extends SimpleTypeVisitor14<Void, Set<Requireme
     }
 
     @Override
-    public Void visitArray(ArrayType type, Set<RequirementAnnotation> markers) {
-        return type.getComponentType().accept(this, markers);
+    public Void visitArray(ArrayType type, GatheringContext context) {
+        return type.getComponentType().accept(this, context);
     }
 
     @Override
-    public Void visitDeclared(DeclaredType type, Set<RequirementAnnotation> markers) {
-        type.getEnclosingType().accept(this, markers);
+    public Void visitDeclared(DeclaredType type, GatheringContext context) {
+        type.getEnclosingType().accept(this, context);
 
         for (TypeMirror typeArgument : type.getTypeArguments()) {
-            typeArgument.accept(this, markers);
+            typeArgument.accept(this, context);
         }
 
         Element element = type.asElement();
-        markers.addAll(this.processingContext.getUsageRequirements(element));
+        context.addRequirementAnnotations(this.processingContext.getAllUsageRequirements(element));
 
         return null;
     }
 
     @Override
-    public Void visitNull(NullType type, Set<RequirementAnnotation> markers) {
+    public Void visitNull(NullType type, GatheringContext context) {
         return null;
     }
 
     @Override
-    public Void visitError(ErrorType type, Set<RequirementAnnotation> markers) {
+    public Void visitError(ErrorType type, GatheringContext context) {
         return null;
     }
 
     @Override
-    public Void visitTypeVariable(TypeVariable type, Set<RequirementAnnotation> markers) {
+    public Void visitTypeVariable(TypeVariable type, GatheringContext context) {
         return null; // TODO double-check the behavior
     }
 
     @Override
-    public Void visitWildcard(WildcardType type, Set<RequirementAnnotation> markers) {
+    public Void visitWildcard(WildcardType type, GatheringContext context) {
         TypeMirror extendsBound = type.getExtendsBound();
         if (extendsBound != null) {
-            extendsBound.accept(this, markers);
+            extendsBound.accept(this, context);
         }
 
         TypeMirror superBound = type.getSuperBound();
         if (superBound != null) {
-            superBound.accept(this, markers);
+            superBound.accept(this, context);
         }
 
         return null;
     }
 
     @Override
-    public Void visitExecutable(ExecutableType type, Set<RequirementAnnotation> markers) {
+    public Void visitExecutable(ExecutableType type, GatheringContext context) {
         for (TypeMirror typeVariable : type.getTypeVariables()) {
-            typeVariable.accept(this, markers);
+            typeVariable.accept(this, context);
         }
 
-        type.getReturnType().accept(this, markers);
+        type.getReturnType().accept(this, context);
 
         for (TypeMirror parameterType : type.getParameterTypes()) {
-            parameterType.accept(this, markers);
+            parameterType.accept(this, context);
         }
 
-        type.getReceiverType().accept(this, markers);
+        type.getReceiverType().accept(this, context);
 
         for (TypeMirror thrownType : type.getThrownTypes()) {
-            thrownType.accept(this, markers);
+            thrownType.accept(this, context);
         }
 
         return null;
     }
 
     @Override
-    public Void visitPrimitive(PrimitiveType type, Set<RequirementAnnotation> markers) {
+    public Void visitPrimitive(PrimitiveType type, GatheringContext context) {
         return null;
     }
 
     @Override
-    public Void visitNoType(NoType type, Set<RequirementAnnotation> markers) {
+    public Void visitNoType(NoType type, GatheringContext context) {
         return null;
     }
 
     @Override
-    public Void visitIntersection(IntersectionType type, Set<RequirementAnnotation> markers) {
+    public Void visitIntersection(IntersectionType type, GatheringContext context) {
         for (TypeMirror bound : type.getBounds()) {
-            bound.accept(this, markers);
+            bound.accept(this, context);
         }
 
         return null;
     }
 
     @Override
-    public Void visitUnknown(TypeMirror type, Set<RequirementAnnotation> markers) {
+    public Void visitUnknown(TypeMirror type, GatheringContext context) {
         throw new UnknownTypeException(type);
     }
 
     @Override
-    public Void visitUnion(UnionType type, Set<RequirementAnnotation> markers) {
+    public Void visitUnion(UnionType type, GatheringContext context) {
         for (TypeMirror alternative : type.getAlternatives()) {
-            alternative.accept(this, markers);
+            alternative.accept(this, context);
         }
 
         return null;

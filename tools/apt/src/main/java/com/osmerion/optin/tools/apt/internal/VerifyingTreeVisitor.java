@@ -20,12 +20,16 @@ import com.sun.source.tree.*;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
-import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-final class VerifyingTreeVisitor extends TreeScanner<Void, VerificationContext> {
+final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends RequirementAnnotation>, VerificationContext> {
 
     private final OptInProcessingContext processingContext;
     private final Trees trees;
@@ -39,58 +43,99 @@ final class VerifyingTreeVisitor extends TreeScanner<Void, VerificationContext> 
     }
 
     @Override
-    public Void visitClass(ClassTree node, VerificationContext context) {
-        Element element = this.trees.getElement(context.getPath(node));
-        this.processingContext.verifyElement(element, context);
-
-        return null;
+    public @Nullable Set<? extends RequirementAnnotation> scan(@Nullable Tree tree, VerificationContext context) {
+        return (tree == null) ? Set.of() : tree.accept(this, context);
     }
 
     @Override
-    public Void visitIdentifier(IdentifierTree node, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> scan(@Nullable Iterable<? extends Tree> nodes, VerificationContext context) {
+        HashSet<RequirementAnnotation> requirements = new HashSet<>();
+
+        if (nodes != null) {
+            for (Tree node : nodes) {
+                requirements.addAll(this.scan(node, context));
+            }
+        }
+
+        return requirements;
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> reduce(@Nullable Set<? extends RequirementAnnotation> r1, @Nullable Set<? extends RequirementAnnotation> r2) {
+        if (r1 == null) {
+            if (r2 == null) {
+                return Set.of();
+            } else {
+                return r2;
+            }
+        } else if (r2 == null) {
+            return r1;
+        }
+
+        return Stream.concat(r1.stream(), r2.stream()).collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> visitClass(ClassTree node, VerificationContext context) {
+        Element element = this.trees.getElement(context.getPath(node));
+        return this.processingContext.verifyElement(element, context);
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> visitIdentifier(IdentifierTree node, VerificationContext context) {
         Element element = this.trees.getElement(context.getPath(node));
 
         if (element != null) {
             TypeMirror typeMirror = element.asType();
-            Collection<RequirementAnnotation> requirements = this.processingContext.getUsageRequirements(typeMirror);
-            this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
+            Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(typeMirror);
+            return this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
         }
 
-        return null;
+        return Set.of();
     }
 
     @Override
-    public Void visitMemberSelect(MemberSelectTree node, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitMemberSelect(MemberSelectTree node, VerificationContext context) {
         TreePath path = context.getPath(node);
         TypeMirror typeMirror = this.trees.getTypeMirror(path);
 
-        if (typeMirror != null) {
-            Collection<RequirementAnnotation> requirements = this.processingContext.getUsageRequirements(typeMirror);
-            this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements;
 
+        if (typeMirror != null) {
+            Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(typeMirror);
+            unclaimedSatisfiedRequirements = this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
             context = context.withAnnotations(requirements);
+        } else {
+            unclaimedSatisfiedRequirements = Set.of();
         }
 
-        return super.visitMemberSelect(node, context);
+        return Stream.concat(unclaimedSatisfiedRequirements.stream(), super.visitMemberSelect(node, context).stream())
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
-    public Void visitMethodInvocation(MethodInvocationTree node, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitMethodInvocation(MethodInvocationTree node, VerificationContext context) {
         TreePath path = context.getPath(node);
+        if (path == null) return Set.of();
+
         TypeMirror typeMirror = this.trees.getTypeMirror(path);
 
+        Set<? extends RequirementAnnotation> requirements;
+
         if (typeMirror != null) {
-            Collection<RequirementAnnotation> requirements = this.processingContext.getUsageRequirements(typeMirror);
+            requirements = this.processingContext.getAllUsageRequirements(typeMirror);
             this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
+        } else {
+            requirements = Set.of();
         }
 
-        return super.visitMethodInvocation(node, context);
+        return Stream.concat(requirements.stream(), super.visitMethodInvocation(node, context).stream())
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
-    public Void visitVariable(VariableTree node, VerificationContext context) {
-        TreePath path = context.getPath(node);
-        if (path == null) return null;
+    public Set<? extends RequirementAnnotation> visitVariable(VariableTree node, VerificationContext context) {
+        TreePath path = TreePath.getPath(context.getCompilationUnit(), node);
 
         return super.visitVariable(node, context);
     }

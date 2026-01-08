@@ -27,7 +27,13 @@ val compileTestingClasspath by configurations.registering {
 }
 
 multiRelease {
-    targetVersions(17, 20)
+    targetVersions(17, 18, 20)
+}
+
+configurations {
+    named("java20CompileClasspath") {
+        extendsFrom(configurations["java18CompileClasspath"])
+    }
 }
 
 @Suppress("UnstableApiUsage")
@@ -88,7 +94,15 @@ testing {
 }
 
 tasks {
+    val compileJava18Java = named<JavaCompile>("compileJava18Java") {
+        javaCompiler = project.javaToolchains.compilerFor(project.java.toolchain)
+        options.release = 18
+    }
+
     named<JavaCompile>("compileJava20Java") {
+        dependsOn(compileJava18Java)
+
+        javaCompiler = project.javaToolchains.compilerFor(project.java.toolchain)
         options.release = 20
     }
 
@@ -116,7 +130,10 @@ dependencies {
     implementation(buildDeps.kotlin.metadata.jvm)
     implementation(libs.jspecify)
 
+    "java20Implementation"(objects.fileCollection().from(sourceSets["java18"].output.classesDirs))
+
     compileTestingClasspath(buildDeps.kotlin.stdlib)
     compileTestingClasspath("com.example:producer-alpha")
     compileTestingClasspath("com.example:producer-beta")
+    compileTestingClasspath("com.example:producer-gamma")
 }

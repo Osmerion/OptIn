@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.osmerion.optin.tools.apt;
 
 import com.osmerion.optin.tools.apt.compiler.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -67,7 +68,8 @@ final class RecordTest extends AbstractFunctionalTest {
         );
 
         assertThat(compiler.compile(record))
-            .hasSucceeded();
+            .hasSucceeded()
+            .doesNotHaveWarnings();
     }
 
     @ParameterizedTest
@@ -92,7 +94,8 @@ final class RecordTest extends AbstractFunctionalTest {
         );
 
         assertThat(compiler.compile(record))
-            .hasSucceeded();
+            .hasSucceeded()
+            .doesNotHaveWarnings();
     }
 
     @ParameterizedTest
@@ -137,7 +140,7 @@ final class RecordTest extends AbstractFunctionalTest {
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_OptIn(TestCompiler compiler, String typeName) {
+    void testRecordComponent_OptIn(TestCompiler compiler, String typeName, String markerName) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -155,7 +158,8 @@ final class RecordTest extends AbstractFunctionalTest {
         );
 
         assertThat(compiler.compile(record))
-            .hasSucceeded();
+            .hasSucceeded()
+            .hasWarningContaining("unused opt-in: " + markerName);
     }
 
     @ParameterizedTest
@@ -177,7 +181,8 @@ final class RecordTest extends AbstractFunctionalTest {
         );
 
         assertThat(compiler.compile(record))
-            .hasSucceeded();
+            .hasSucceeded()
+            .doesNotHaveWarnings();
     }
 
     @ParameterizedTest
@@ -206,6 +211,41 @@ final class RecordTest extends AbstractFunctionalTest {
                             public record TestRecord(%s component) {}
                                                      %s^""".formatted(markerName, typeName, " ".repeat(diagnosticOffset))))
             );
+    }
+
+    @Test
+    void testUnusedOptIn() {
+        SourceFile record = createJavaFile(
+            "com.example.TestRecord",
+            """
+            package com.example;
+            
+            @com.osmerion.optin.OptIn(com.example.producer.alpha.AlphaMarker.class)
+            public record TestRecord() {}
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasSucceeded()
+            .hasWarningContaining("unused opt-in: com.example.producer.alpha.AlphaMarker");
+    }
+
+    @Test
+    void testMissing() {
+        SourceFile record = createJavaFile(
+            "com.example.TestRecord",
+            """
+            package com.example;
+            
+            public record TestRecord(com.example.producer.beta.ClassWithMarkedModule m) {}
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasFailed()
+            .hasWarningContaining("unused opt-in: com.example.producer.alpha.AlphaMarker");
     }
 
 }

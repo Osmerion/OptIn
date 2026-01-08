@@ -16,12 +16,15 @@
 package com.osmerion.optin.tools.apt.internal;
 
 import com.osmerion.optin.tools.apt.internal.javac.JavacUtil17;
-import com.osmerion.optin.tools.apt.internal.javac.JavacUtilGetter;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
+import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
+import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.util.Trees;
 
 import javax.lang.model.element.*;
-import javax.lang.model.util.ElementScanner14;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.AbstractElementVisitor14;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import java.lang.annotation.ElementType;
@@ -29,8 +32,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.*;
+import java.util.stream.Collectors;
 
-final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationContext> {
+final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? extends RequirementAnnotation>, VerificationContext> {
 
     private final OptInProcessingContext processingContext;
     private final Elements elements;
@@ -45,8 +49,48 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         this.javacUtil = javacUtil;
     }
 
+    private Set<? extends RequirementAnnotation> scan(Element e, VerificationContext context) {
+        return e.accept(this, context);
+    }
+
+    private Set<? extends RequirementAnnotation> scan(Iterable<? extends Element> iterable, VerificationContext context) {
+        HashSet<RequirementAnnotation> requirements = new HashSet<>();
+        for (Element e : iterable)
+            requirements.addAll(this.scan(e, context));
+        return Set.copyOf(requirements);
+    }
+
     @Override
-    public Void visitExecutable(ExecutableElement element, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitPackage(PackageElement element, VerificationContext context) {
+        /* 1. Gather all requirements and opt-ins for the element. */
+        Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);
+        context = context.withAnnotations(annotations);
+
+        /* 2. Verify the requirements. */
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.scan(element.getEnclosedElements(), context);
+
+        @SuppressWarnings("unchecked")
+        Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
+            .filter(it -> it instanceof OptInAnnotation)
+            .filter(optInAnnotation -> unclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
+            .collect(Collectors.toUnmodifiableSet());
+
+        for (OptInAnnotation optInAnnotation : unusedOptIns) {
+            this.processingContext.report(context, Diagnostic.Kind.WARNING, "unused opt-in: " + optInAnnotation.fqMarkerName(), element, optInAnnotation.mirror());
+        }
+
+        return unclaimedSatisfiedRequirements.stream()
+            .filter(requirement -> annotations.stream().noneMatch(consentAnnotation -> consentAnnotation.satisfies(requirement)))
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> visitTypeParameter(TypeParameterElement e, VerificationContext context) {
+        return Set.of();
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> visitExecutable(ExecutableElement element, VerificationContext context) {
         /*
          * Work around the API not tracking if the element is synthetic in some cases. Notably, generated record members
          * (i.e. toString() and hashCode()).
@@ -55,7 +99,7 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
          * issue but in the context of the classfile attributes.
          */
         if (this.trees.getTree(element) == null) {
-            return null;
+            return Set.of();
         }
 
         /*
@@ -64,9 +108,9 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
          */
         Elements.Origin origin = this.elements.getOrigin(element);
         if (origin == Elements.Origin.SYNTHETIC) {
-            return null;
+            return Set.of();
         } else if (origin == Elements.Origin.MANDATED && !this.javacUtil.isCanonicalConstructor(element)) {
-            return null;
+            return Set.of();
         }
 
         /* 1. Gather all requirements and opt-ins for the element. */
@@ -74,13 +118,28 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        this.processingContext.verifyTree(element, context);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.processingContext.verifyTree(element, context);
 
-        return null;
+        @SuppressWarnings("unchecked")
+        Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
+            .filter(it -> it instanceof OptInAnnotation)
+            .filter(optInAnnotation -> unclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
+            .collect(Collectors.toUnmodifiableSet());
+
+        for (OptInAnnotation optInAnnotation : unusedOptIns) {
+            this.processingContext.report(context, Diagnostic.Kind.WARNING, "unused opt-in: " + optInAnnotation.fqMarkerName(), element, optInAnnotation.mirror());
+        }
+
+        /* 3. Additionally, check overridden elements. */
+        this.verifyOverriddenElements(context, element);
+
+        return unclaimedSatisfiedRequirements.stream()
+            .filter(requirement -> annotations.stream().noneMatch(consentAnnotation -> consentAnnotation.satisfies(requirement)))
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
-    public Void visitRecordComponent(RecordComponentElement element, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitRecordComponent(RecordComponentElement element, VerificationContext context) {
         // https://bugs.openjdk.org/browse/JDK-8295184
 
         /* 1. Gather all requirements and opt-ins for the element. */
@@ -88,13 +147,14 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        this.processingContext.verifyTree(element, context);
-
-        return null;
+//        return this.processingContext.verifyTree(element, context);
+        return Set.of();
     }
 
     @Override
-    public Void visitType(TypeElement element, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitType(TypeElement element, VerificationContext context) {
+        context = context.withCompilationUnit(this.trees.getPath(element).getCompilationUnit(), OptInElementUtil.isKotlin(element));
+
         if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
             /*
              * If the type element being verified represents an annotation, we check if it is a marker annotation by
@@ -180,13 +240,25 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        super.visitType(element, context);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.scan(createScanningList(element, element.getEnclosedElements()), context);
 
-        return null;
+        @SuppressWarnings("unchecked")
+        Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
+            .filter(it -> it instanceof OptInAnnotation)
+            .filter(optInAnnotation -> unclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
+            .collect(Collectors.toUnmodifiableSet());
+
+        for (OptInAnnotation optInAnnotation : unusedOptIns) {
+            this.processingContext.report(context, Diagnostic.Kind.WARNING, "unused opt-in: " + optInAnnotation.fqMarkerName(), element, optInAnnotation.mirror());
+        }
+
+        return unclaimedSatisfiedRequirements.stream()
+            .filter(requirement -> annotations.stream().noneMatch(consentAnnotation -> consentAnnotation.satisfies(requirement)))
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
-    public Void visitModule(ModuleElement element, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitModule(ModuleElement element, VerificationContext context) {
         /* 1. Gather all requirements and opt-ins for the element. */
         Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);
         context = context.withAnnotations(annotations);
@@ -194,11 +266,11 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         /* 2. Verify the requirements. */
         this.processingContext.verifyTree(element, context);
 
-        return null;
+        return this.scan(element.getEnclosedElements(), context);
     }
 
     @Override
-    public Void visitVariable(VariableElement element, VerificationContext context) {
+    public Set<? extends RequirementAnnotation> visitVariable(VariableElement element, VerificationContext context) {
         /*
          * We validate record components and don't want to validate the generated fields as this leads to redundant
          * checks and reports. However, generated record methods and fields are not marked in bytecode. ACC_MANDATED is
@@ -210,7 +282,7 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
          */
         Element enclosingElement = element.getEnclosingElement();
         if (enclosingElement.getKind() == ElementKind.RECORD && !element.getModifiers().contains(Modifier.STATIC)) {
-            return null;
+            return Set.of();
         }
 
         /* 1. Gather all requirements and opt-ins for the element. */
@@ -218,9 +290,69 @@ final class VerifyingElementVisitor extends ElementScanner14<Void, VerificationC
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        this.processingContext.verifyTree(element, context);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.processingContext.verifyTree(element, context);
 
-        return null;
+        @SuppressWarnings("unchecked")
+        Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
+            .filter(it -> it instanceof OptInAnnotation)
+            .filter(optInAnnotation -> unclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
+            .collect(Collectors.toUnmodifiableSet());
+
+        for (OptInAnnotation optInAnnotation : unusedOptIns) {
+            this.processingContext.report(context, Diagnostic.Kind.WARNING, "unused opt-in: " + optInAnnotation.fqMarkerName(), element, optInAnnotation.mirror());
+        }
+
+        return unclaimedSatisfiedRequirements.stream()
+            .filter(requirement -> annotations.stream().noneMatch(consentAnnotation -> consentAnnotation.satisfies(requirement)))
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private List<? extends Element> createScanningList(Parameterizable element, List<? extends Element> toBeScanned) {
+        List<? extends TypeParameterElement> typeParameters = element.getTypeParameters();
+
+        if (typeParameters.isEmpty()) {
+            return toBeScanned;
+        } else {
+            List<Element> scanningList = new ArrayList<>(typeParameters);
+            scanningList.addAll(toBeScanned);
+            return scanningList;
+        }
+    }
+
+    private void verifyOverriddenElements(VerificationContext context, ExecutableElement element) {
+        Element enclosingElement = element.getEnclosingElement();
+        if (enclosingElement instanceof TypeElement enclosingTypeElement) {
+            Set<TypeElement> visitedTypeElements = new HashSet<>();
+
+            Queue<TypeElement> typeElements = new ArrayDeque<>();
+            typeElements.add(enclosingTypeElement);
+
+            outer: while (!typeElements.isEmpty()) {
+                TypeElement typeElement = typeElements.poll();
+                if (!visitedTypeElements.add(typeElement)) continue;
+
+                for (Element enclosedElement : typeElement.getEnclosedElements()) {
+                    if (!(enclosedElement instanceof ExecutableElement enclosedExecutableElement)) continue;
+                    if (!this.elements.overrides(element, enclosedExecutableElement, enclosingTypeElement)) continue;
+
+                    Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(enclosedElement);
+                    this.processingContext.reportUnsatisfiedRequirements(context, requirements, this.trees.getTree(element));
+
+                    continue outer;
+                }
+
+                TypeMirror superclassMirror = typeElement.getSuperclass();
+                if (superclassMirror.getKind() != TypeKind.NONE) {
+                    TypeElement superclassElement = this.elements.getTypeElement(superclassMirror.toString());
+                    visitedTypeElements.add(superclassElement);
+                }
+
+                for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
+                    TypeElement interfaceElement = this.elements.getTypeElement(interfaceMirror.toString());
+                    visitedTypeElements.add(interfaceElement);
+                }
+            }
+        }
     }
 
 }

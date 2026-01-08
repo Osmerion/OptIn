@@ -15,16 +15,10 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers;
 
-import com.sun.source.util.Trees;
+import com.sun.source.tree.CompilationUnitTree;
 
-import javax.lang.model.util.Elements;
+public interface LocalChecker {
 
-public interface CheckerContext {
-
-    Elements elements();
-
-    Reporter reporter();
-
-    Trees trees();
+    void check(CompilationUnitTree tree, CheckerContext context);
 
 }

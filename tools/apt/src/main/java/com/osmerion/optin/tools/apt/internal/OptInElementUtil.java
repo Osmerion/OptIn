@@ -20,9 +20,9 @@ import kotlin.Metadata;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
-final class OptInElementUtil {
+public final class OptInElementUtil {
 
-    static boolean isKotlin(Element element) {
+    public static boolean isKotlin(Element element) {
         do {
             if (element instanceof TypeElement) {
                 Metadata kotlinMetadata = element.getAnnotation(Metadata.class);

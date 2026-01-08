@@ -16,7 +16,6 @@
 package com.osmerion.optin.tools.apt.internal.markers;
 
 import com.osmerion.optin.RequiresOptIn;
-import org.jspecify.annotations.Nullable;
 
 /**
  * TODO doc

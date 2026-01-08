@@ -18,6 +18,7 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.Tree;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -26,6 +27,7 @@ import javax.tools.Diagnostic;
 import java.lang.annotation.ElementType;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * The processing context.
@@ -65,19 +67,32 @@ public interface OptInProcessingContext {
         ElementType.TYPE
     );
 
-    Collection<? extends ConsentAnnotation> getConsentAnnotations(Element element);
+    /**
+     * {@return all consent-related annotations directly on the given {@code element}}
+     *
+     * <p>This method does <b>not</b> consider {@link Element#getEnclosingElement() enclosing elements}.</p>
+     *
+     * @param element   the element which's consent-related annotations to return
+     */
+    Set<? extends ConsentAnnotation> getConsentAnnotations(Element element);
 
-    Collection<RequirementAnnotation> getUsageRequirements(Element element);
+    /**
+     * TODO doc
+     *
+     * @param element
+     * @return
+     */
+    Set<? extends RequirementAnnotation> getAllUsageRequirements(Element element);
 
-    Collection<RequirementAnnotation> getUsageRequirements(TypeMirror type);
+    Set<? extends RequirementAnnotation> getAllUsageRequirements(TypeMirror type);
 
-    Collection<RequirementAnnotation> getSubtypingRequirements(Element element);
+    Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element);
 
     void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element);
 
     void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror);
 
-    void reportUnsatisfiedRequirements(VerificationContext context, Collection<RequirementAnnotation> requirements, Tree tree);
+    Set<? extends RequirementAnnotation> reportUnsatisfiedRequirements(VerificationContext context, Collection<? extends RequirementAnnotation> requirements, Tree tree);
 
     /**
      * Processes the given {@link Element}.
@@ -85,7 +100,7 @@ public interface OptInProcessingContext {
      * @param element   the element to process
      * @param context   the verification context
      */
-    void verifyElement(Element element, VerificationContext context);
+    Set<? extends RequirementAnnotation> verifyElement(Element element, VerificationContext context);
 
     /**
      * Processes the tree for the given {@link Element}.
@@ -93,6 +108,6 @@ public interface OptInProcessingContext {
      * @param element   the element which's tree to process
      * @param context   the verification context
      */
-    void verifyTree(Element element, VerificationContext context);
+    @Nullable Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context);
 
 }

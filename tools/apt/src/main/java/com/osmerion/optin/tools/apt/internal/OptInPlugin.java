@@ -18,6 +18,8 @@ package com.osmerion.optin.tools.apt.internal;
 import com.sun.source.util.*;
 
 import javax.lang.model.element.Element;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The {@code optIn} {@link Plugin javac plugin} to verify opt-in requirements during Java compilations.

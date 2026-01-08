@@ -15,6 +15,10 @@
  */
 package com.osmerion.optin.tools.apt.internal.markers;
 
+import com.sun.source.util.TreePath;
+
+import javax.lang.model.element.AnnotationMirror;
+
 /**
  * TODO doc
  *
@@ -22,16 +26,24 @@ package com.osmerion.optin.tools.apt.internal.markers;
  */
 public sealed interface OptInAnnotation extends ConsentAnnotation {
 
+    TreePath path();
+
+    AnnotationMirror mirror();
+
     @Override
     default boolean satisfies(RequirementAnnotation marker) {
         return this.fqMarkerName().equals(marker.fqMarkerName());
     }
 
     record JavaOptInAnnotation(
+        @Override TreePath path,
+        @Override AnnotationMirror mirror,
         @Override String fqMarkerName
     ) implements OptInAnnotation {}
 
     record KotlinOptInAnnotation(
+        @Override TreePath path,
+        @Override AnnotationMirror mirror,
         @Override String fqMarkerName
     ) implements OptInAnnotation {}
 

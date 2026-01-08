@@ -15,7 +15,10 @@
  */
 package com.osmerion.optin.tools.apt.internal.javac;
 
+import org.jspecify.annotations.Nullable;
+
 import javax.lang.model.element.*;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.List;
@@ -23,6 +26,38 @@ import java.util.List;
 public class JavacUtil17 {
 
     protected static final String INIT = "<init>";
+
+    public @Nullable TypeElement getOutermostTypeElement(Element element) {
+        return switch (element.getKind()) {
+            case PACKAGE,
+                 MODULE  -> null; // Per the general spec above.
+            case OTHER   -> null; // Outside of base model of the javax.lang.model API
+
+            // Elements of all remaining kinds should be enclosed in some
+            // sort of class or interface. Check to see if the element is
+            // a top-level type; if so, return it. Otherwise, keep going
+            // up the enclosing element chain until a top-level type is
+            // found.
+            default -> {
+                Element enclosing = element;
+                // This implementation is susceptible to infinite loops
+                // for misbehaving element implementations.
+                while (true) {
+                    // Conceptual instanceof TypeElement check. If the
+                    // argument is a type element, put it into a
+                    // one-element list, otherwise an empty list.
+                    List<TypeElement> possibleTypeElement = ElementFilter.typesIn(List.of(enclosing));
+                    if (!possibleTypeElement.isEmpty()) {
+                        TypeElement typeElement = possibleTypeElement.get(0);
+                        if (typeElement.getNestingKind() == NestingKind.TOP_LEVEL) {
+                            yield typeElement;
+                        }
+                    }
+                    enclosing = enclosing.getEnclosingElement();
+                }
+            }
+        };
+    }
 
     public boolean isCanonicalConstructor(ExecutableElement element) {
         Element enclosingElement = element.getEnclosingElement();

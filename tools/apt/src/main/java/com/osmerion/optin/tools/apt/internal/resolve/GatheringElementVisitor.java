@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.apt.internal;
+package com.osmerion.optin.tools.apt.internal.resolve;
 
 import com.osmerion.optin.RequiresOptIn;
+import com.osmerion.optin.tools.apt.internal.OptInElementUtil;
+import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.*;
@@ -29,51 +33,52 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.Types;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * A {@link ElementVisitor} to gather {@link ConsentAnnotation consent annotations}.
  *
  * @author  Leon Linhart
  */
-final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<ConsentAnnotation>> {
+public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, GatheringContext> {
 
     private final OptInProcessingContext processingContext;
     private final Elements elements;
+    private final Trees trees;
     private final Types types;
 
-    public GatheringElementVisitor(OptInProcessingContext processingContext, Elements elements, Types types) {
+    public GatheringElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, Types types) {
         this.processingContext = processingContext;
         this.elements = elements;
+        this.trees = trees;
         this.types = types;
     }
 
     @Override
-    protected Void defaultAction(Element element, Set<ConsentAnnotation> annotations) {
+    protected Void defaultAction(Element element, GatheringContext context) {
         Element currentElement = element;
 
         do {
             Collection<ConsentAnnotation> res = this.getAllConsentAnnotations(currentElement);
-            annotations.addAll(res);
+            context.addConsentAnnotations(res);
         } while ((currentElement = currentElement.getEnclosingElement()) != null);
 
         return null;
     }
 
     @Override
-    public Void visitExecutable(ExecutableElement element, Set<ConsentAnnotation> annotations) {
+    public Void visitExecutable(ExecutableElement element, GatheringContext context) {
         /* First, collect all requirement annotations from overridden elements. */
-        annotations.addAll(this.collectAllRequirementsFromOverriddenElements(element));
+        context.addRequirementAnnotations(this.collectAllRequirementsFromOverriddenElements(element));
 
         /* Then, collect all consent annotations as usual by walking up the element tree. */
-        return super.visitExecutable(element, annotations);
+        return super.visitExecutable(element, context);
     }
 
-    private Collection<RequirementAnnotation> collectAllRequirementsFromOverriddenElements(ExecutableElement element) {
+    private Set<? extends RequirementAnnotation> collectAllRequirementsFromOverriddenElements(ExecutableElement element) {
         Queue<TypeElement> typeElements = new ArrayDeque<>();
 
         Element enclosingElement = element.getEnclosingElement();
-        if (!(enclosingElement instanceof TypeElement enclosingTypeElement)) return List.of();
+        if (!(enclosingElement instanceof TypeElement enclosingTypeElement)) return Set.of();
 
         typeElements.add(enclosingTypeElement);
 
@@ -86,7 +91,7 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
                 ExecutableElement executableElement = (ExecutableElement) enclosedElement;
 
                 if (this.elements.overrides(element, executableElement, enclosingTypeElement)) {
-                    return this.processingContext.getUsageRequirements(executableElement);
+                    return this.processingContext.getAllUsageRequirements(executableElement);
                 }
             }
 
@@ -106,56 +111,97 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
             }
         }
 
-        return List.of();
+        return Set.of();
     }
 
-    private @Nullable RequirementAnnotation deriveRequirementMarker(AnnotationMirror mirror) {
+    private @Nullable RequirementAnnotation deriveRequirementMarker(AnnotationMirror mirror, boolean isKotlin) {
         DeclaredType annotationType = mirror.getAnnotationType();
         Element annotationTypeElement = annotationType.asElement();
 
-        // TODO Kotlin support
-
         RequiresOptIn requiresOptIn = annotationTypeElement.getAnnotation(RequiresOptIn.class);
-        if (requiresOptIn == null) return null; // IDEA incorrectly warns here (https://youtrack.jetbrains.com/issue/IDEA-382777)
+        if (requiresOptIn != null) { // IDEA incorrectly warns here (https://youtrack.jetbrains.com/issue/IDEA-382777)
+            String annotationFqName = annotationType.toString();
+            return new RequirementAnnotation.JavaRequirementAnnotation(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
+        }
 
-        String annotationFqName = annotationType.toString();
-        return new RequirementAnnotation.JavaRequirementAnnotation(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
+        for (AnnotationMirror annotationMirror : annotationTypeElement.getAnnotationMirrors()) {
+            if (!OptInProcessingContext.KOTLIN_REQUIRES_OPT_IN_FQ_NAME.equals(annotationMirror.getAnnotationType().toString())) continue;
+
+            String annotationFqName = annotationType.toString();
+            Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(annotationMirror);
+
+            AnnotationValue messageValue = values.entrySet().stream()
+                .filter(entry -> "message".contentEquals(entry.getKey().getSimpleName()))
+                .findAny()
+                .orElseThrow()
+                .getValue();
+
+            if (!(messageValue.getValue() instanceof String message))
+                throw new IllegalStateException("Unexpected type for Kotlin's @RequiresOptIn 'message' element: " + messageValue.getValue().getClass().getSimpleName());
+
+            AnnotationValue levelValue = values.entrySet().stream()
+                .filter(entry -> "level".contentEquals(entry.getKey().getSimpleName()))
+                .findAny()
+                .orElseThrow()
+                .getValue();
+
+            if (!(levelValue.getValue() instanceof VariableElement levelVarElement))
+                throw new IllegalStateException("Unexpected type for Kotlin's @RequiresOptIn 'level' element: " + messageValue.getValue().getClass().getSimpleName());
+
+            RequiresOptIn.Level level = switch (levelVarElement.getSimpleName().toString()) {
+                case "ERROR" -> RequiresOptIn.Level.ERROR;
+                case "WARNING" -> RequiresOptIn.Level.WARNING;
+                default -> throw new IllegalStateException("Unexpected severity level for Kotlin's @RequiresOptIn: " + levelVarElement);
+            };
+
+            return new RequirementAnnotation.KotlinRequirementAnnotation(annotationFqName, message, level);
+        }
+
+        return null;
     }
 
-    List<ConsentAnnotation> getAllConsentAnnotations(Element element) {
+    public Set<ConsentAnnotation> getAllConsentAnnotations(Element element) {
+        boolean isKotlinDeclaration = OptInElementUtil.isKotlin(element);
+        TreePath path = this.trees.getPath(element);
+
         List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
-        List<ConsentAnnotation> markers = new ArrayList<>();
+        Set<ConsentAnnotation> markers = new HashSet<>();
 
         for (AnnotationMirror annotationMirror : annotationMirrors) {
-            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(annotationMirror);
+            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(path, annotationMirror, isKotlinDeclaration);
 
             if (!optInMarkers.isEmpty()) {
                 markers.addAll(optInMarkers);
                 continue;
             }
 
-            RequirementAnnotation marker = this.deriveRequirementMarker(annotationMirror);
+            RequirementAnnotation marker = this.deriveRequirementMarker(annotationMirror, isKotlinDeclaration);
             if (marker != null) markers.add(marker);
         }
 
-        return List.copyOf(markers);
+        return Set.copyOf(markers);
     }
 
-    private List<? extends ConsentAnnotation> deriveOptInMarkers(AnnotationMirror mirror) {
+    private List<? extends ConsentAnnotation> deriveOptInMarkers(TreePath path, AnnotationMirror mirror, boolean isKotlin) {
         //noinspection NullableProblems
         return this.unwrapRepeatedOptIns(mirror).stream()
             .map(unwrappedMirror -> {
                 String annotationFqName = unwrappedMirror.getAnnotationType().toString();
 
-                Function<String, OptInAnnotation> markerFactory;
-                String markerClassValueName;
+                @FunctionalInterface
+                interface OptInAnnotationFactory {
+                    OptInAnnotation create(TreePath path, AnnotationMirror mirror, String message);
+                }
+
+                OptInAnnotationFactory markerFactory;
+                String markerClassAttributeName;
 
                 if (OptInProcessingContext.OPT_IN_FQ_NAME.equals(annotationFqName)) {
                     markerFactory = OptInAnnotation.JavaOptInAnnotation::new;
-                    markerClassValueName = "value";
+                    markerClassAttributeName = "value";
                 } else if (OptInProcessingContext.KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
                     markerFactory = OptInAnnotation.KotlinOptInAnnotation::new;
-                    markerClassValueName = "markerClass";
+                    markerClassAttributeName = "markerClass";
                 } else {
                     return null;
                 }
@@ -163,7 +209,7 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
                 Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(unwrappedMirror);
 
                 AnnotationValue markerValue = values.entrySet().stream()
-                    .filter(entry -> markerClassValueName.contentEquals(entry.getKey().getSimpleName()))
+                    .filter(entry -> markerClassAttributeName.contentEquals(entry.getKey().getSimpleName()))
                     .findAny()
                     .orElseThrow()
                     .getValue();
@@ -178,7 +224,7 @@ final class GatheringElementVisitor extends SimpleElementVisitor14<Void, Set<Con
                     return null;
                 }
 
-                return markerFactory.apply(markerValueTypeMirror.toString());
+                return markerFactory.create(path, mirror, markerValueTypeMirror.toString());
             })
             .filter(Objects::nonNull)
             .toList();

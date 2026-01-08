@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.apt.internal.checkers;
-
-import com.sun.source.util.Trees;
+package com.osmerion.optin.tools.apt.internal.javac;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
-public interface CheckerContext {
+public final class JavacUtilGetter {
 
-    Elements elements();
-
-    Reporter reporter();
-
-    Trees trees();
+    public static JavacUtil17 getJavacUtil(Elements elements, Types types) {
+        return new JavacUtil18(elements, types);
+    }
 
 }

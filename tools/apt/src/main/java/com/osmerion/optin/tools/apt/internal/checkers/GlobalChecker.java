@@ -15,16 +15,8 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers;
 
-import com.sun.source.util.Trees;
+public interface GlobalChecker {
 
-import javax.lang.model.util.Elements;
-
-public interface CheckerContext {
-
-    Elements elements();
-
-    Reporter reporter();
-
-    Trees trees();
+    void check(CheckerContext context);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Leon Linhart
+ * Copyright 2022-2025 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.apt.internal.checkers;
+package com.osmerion.optin.tools.apt.internal.javac;
 
-public interface Checker {
+import javax.lang.model.element.*;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
-    void check(CheckerContext context);
+public class JavacUtil18 extends JavacUtil17 {
+
+    JavacUtil18(Elements elements, Types types) {
+        super(elements, types);
+    }
+
+    @Override
+    public TypeElement getOutermostTypeElement(Element element) {
+        return this.elements.getOutermostTypeElement(element);
+    }
 
 }

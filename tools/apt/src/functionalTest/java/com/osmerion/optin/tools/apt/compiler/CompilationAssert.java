@@ -25,6 +25,20 @@ public final class CompilationAssert extends AbstractAssert<CompilationAssert, C
         super(compilation, CompilationAssert.class);
     }
 
+    public CompilationAssert doesNotHaveWarnings() {
+        this.isNotNull();
+
+        boolean res = this.actual.diagnostics()
+            .stream()
+            .noneMatch(diagnostic -> diagnostic.severity() == DiagnosticMessage.Severity.WARNING);
+
+        if (!res) {
+            this.failWithMessage("Expected compilation to have no warning diagnostics, but found: %s", this.actual.diagnostics());
+        }
+
+        return this;
+    }
+
     public CompilationAssert hasErrorContaining(String message) {
         this.isNotNull();
 
@@ -35,6 +49,21 @@ public final class CompilationAssert extends AbstractAssert<CompilationAssert, C
 
         if (!res) {
             this.failWithMessage("Expected compilation to have error diagnostic containing '%s', but none matched: %s", message, this.actual.diagnostics());
+        }
+
+        return this;
+    }
+
+    public CompilationAssert hasWarningContaining(String message) {
+        this.isNotNull();
+
+        boolean res = this.actual.diagnostics()
+            .stream()
+            .filter(diagnostic -> diagnostic.severity() == DiagnosticMessage.Severity.WARNING)
+            .anyMatch(diagnostic -> diagnostic.message().contains(message));
+
+        if (!res) {
+            this.failWithMessage("Expected compilation to have warning diagnostic containing '%s', but none matched: %s", message, this.actual.diagnostics());
         }
 
         return this;
