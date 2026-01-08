@@ -134,11 +134,4 @@ final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends Req
             .collect(Collectors.toUnmodifiableSet());
     }
 
-    @Override
-    public Set<? extends RequirementAnnotation> visitVariable(VariableTree node, VerificationContext context) {
-        TreePath path = TreePath.getPath(context.getCompilationUnit(), node);
-
-        return super.visitVariable(node, context);
-    }
-
 }
