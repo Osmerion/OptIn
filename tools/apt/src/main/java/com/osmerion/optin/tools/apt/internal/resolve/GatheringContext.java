@@ -15,11 +15,8 @@
  */
 package com.osmerion.optin.tools.apt.internal.resolve;
 
-import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
-import com.sun.source.util.TreePath;
 
-import javax.lang.model.element.AnnotationMirror;
 import java.util.Collection;
 
 /**
@@ -28,10 +25,6 @@ import java.util.Collection;
  * @author  Leon Linhart
  */
 public interface GatheringContext {
-
-    void store(TreePath path, AnnotationMirror mirror, ConsentAnnotation annotation);
-
-    void addConsentAnnotations(Collection<? extends ConsentAnnotation> annotation);
 
     void addRequirementAnnotations(Collection<? extends RequirementAnnotation> annotation);
 

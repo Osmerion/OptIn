@@ -92,14 +92,6 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         GatheringContext context = new GatheringContext() {
 
             @Override
-            public void store(TreePath path, AnnotationMirror mirror, ConsentAnnotation annotation) {
-
-            }
-
-            @Override
-            public void addConsentAnnotations(Collection<? extends ConsentAnnotation> annotation) {}
-
-            @Override
             public void addRequirementAnnotations(Collection<? extends RequirementAnnotation> annotation) {
                 requirements.addAll(annotation);
             }
@@ -118,14 +110,6 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         Set<RequirementAnnotation> requirements = new HashSet<>();
 
         GatheringContext context = new GatheringContext() {
-
-            @Override
-            public void store(TreePath path, AnnotationMirror mirror, ConsentAnnotation annotation) {
-
-            }
-
-            @Override
-            public void addConsentAnnotations(Collection<? extends ConsentAnnotation> annotation) {}
 
             @Override
             public void addRequirementAnnotations(Collection<? extends RequirementAnnotation> annotation) {
@@ -237,6 +221,11 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
         ExtraConfigurationChecker checker = new ExtraConfigurationChecker(this.configuration);
         checker.check(checkerContext);
+    }
+
+    @Override
+    public void report(Diagnostic.Kind kind, String message, TreePath path) {
+        this.trees.printMessage(kind, message, path.getLeaf(), path.getCompilationUnit());
     }
 
     @Override
