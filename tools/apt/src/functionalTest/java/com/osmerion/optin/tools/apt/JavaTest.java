@@ -65,7 +65,7 @@ public final class JavaTest extends AbstractFunctionalTest {
             """
             package com.example;
             
-            @kotlin.OptIn(Marker.class)
+            @kotlin.OptIn(markerClass = Marker.class)
             class Foo {}
             """
         );
