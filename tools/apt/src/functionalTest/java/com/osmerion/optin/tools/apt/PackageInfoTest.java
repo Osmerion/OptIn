@@ -66,6 +66,36 @@ final class PackageInfoTest extends AbstractFunctionalTest {
             .hasSucceeded();
     }
 
+    @Test
+    void testOptIn_Kotlin() {
+        SourceFile packageInfo = createJavaFile(
+            "com.example.package-info",
+            """
+            @OptIn(com.example.producer.alpha.AlphaMarker.class)
+            package com.example;
+
+            import com.osmerion.optin.OptIn;
+            """
+        );
+
+        SourceFile record = createKotlinFile(
+            "com.example.TestRecord",
+            """
+            package com.example
+            
+            import com.example.producer.alpha.*
+            import com.osmerion.optin.*
+
+            data class TestRecord(val m: MarkedClass)
+            """
+        );
+
+        TestCompiler compiler = Compilers.kotlinc();
+        assertThat(compiler.compile(packageInfo, record))
+            .doesNotHaveWarnings()
+            .hasSucceeded();
+    }
+
     @ParameterizedTest
     @MethodSource("provideCompilers")
     void testOptIn_Unused(TestCompiler compiler) {

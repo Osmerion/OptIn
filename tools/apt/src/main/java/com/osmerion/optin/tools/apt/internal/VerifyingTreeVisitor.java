@@ -53,7 +53,8 @@ final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends Req
 
         if (nodes != null) {
             for (Tree node : nodes) {
-                requirements.addAll(this.scan(node, context));
+                Set<? extends RequirementAnnotation> res = this.scan(node, context);
+                if (res != null) requirements.addAll(res);
             }
         }
 
