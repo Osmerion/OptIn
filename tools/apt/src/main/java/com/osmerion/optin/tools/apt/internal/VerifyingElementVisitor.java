@@ -30,10 +30,6 @@ import javax.lang.model.util.AbstractElementVisitor14;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -167,88 +163,6 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
     @Override
     public Set<? extends RequirementAnnotation> visitType(TypeElement element, VerificationContext context) {
         context = context.withCompilationUnit(this.trees.getPath(element).getCompilationUnit(), OptInElementUtil.isKotlin(element));
-
-        if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
-            /*
-             * If the type element being verified represents an annotation, we check if it is a marker annotation by
-             * checking for the presence of our and Kotlin's @RequiresOptIn and validate spec compliance accordingly.
-             */
-            AnnotationMirror osmerionMarkerMirror = null, kotlinMarkerMirror = null;
-
-            for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-                String annotationFqName = annotationMirror.getAnnotationType().toString();
-
-                switch (annotationFqName) {
-                    case OptInProcessingContext.REQUIRES_OPT_IN_FQ_NAME -> osmerionMarkerMirror = annotationMirror;
-                    case OptInProcessingContext.KOTLIN_REQUIRES_OPT_IN_FQ_NAME -> {
-                        kotlinMarkerMirror = annotationMirror;
-
-                        /*
-                         * We don't verify the marker annotation in Kotlin code for kotlin.RequiresOptIn as this is
-                         * already done by Kotlin's compiler. However, we do our usual checks if kotlin.RequiresOptIn is
-                         * used in Java code.
-                         */
-                        if (context.isKotlin()) continue;
-                    }
-                    default -> {
-                        /* Not a requirement marker. Moving on... */
-                        continue;
-                    }
-                }
-
-                /* 1. Require RUNTIME retention */
-                Retention retention = element.getAnnotation(Retention.class);
-                RetentionPolicy retentionPolicy = (retention != null) ? retention.value() : RetentionPolicy.CLASS;
-
-                if (retentionPolicy != RetentionPolicy.RUNTIME) {
-                    String message = "@RequiresOptIn marker annotation must have RUNTIME retention";
-                    this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element);
-                }
-
-                /* 2. Validate targets */
-                Target target = element.getAnnotation(Target.class);
-                ElementType[] targets = (target != null) ? target.value() : OptInProcessingContext.DEFAULT_ANNOTATION_TARGETS;
-                List<ElementType> invalidTargets = Arrays.stream(targets)
-                    .distinct()
-                    .filter(it -> !OptInProcessingContext.SUPPORTED_REQUIREMENT_MARKER_TARGETS.contains(it))
-                    .toList();
-
-                if (!invalidTargets.isEmpty()) {
-                    String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
-                    this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element);
-                }
-
-                // TODO Spec: Should attributes be allowed in @RequiresOptIn marker annotations?
-            }
-
-            /*
-             * Finally, we verify that our and Kotlin's marker are used in Java or Kotlin code respectively. So
-             * essentially we have three cases:
-             *
-             * 1. If both markers are used, warn and report which one to remove depending on language.
-             * 2. If our marker is used in Kotlin, warn and recommend replacing it.
-             * 3. If Kotlin's marker is used in Java, warn and recommend replacing it.
-             */
-            boolean foundOsmerionMarker = (osmerionMarkerMirror != null), foundKotlinMarker = (kotlinMarkerMirror != null);
-            AnnotationMirror markerToRemove;
-
-            if (foundOsmerionMarker && context.isKotlin()) {
-                markerToRemove = osmerionMarkerMirror;
-            } else if (foundKotlinMarker && !context.isKotlin()) {
-                markerToRemove = kotlinMarkerMirror;
-            } else {
-                markerToRemove = null;
-            }
-
-            if (markerToRemove != null) {
-                String message = context.isKotlin() ? OptInProcessingContext.KOTLIN_REQUIRES_OPT_IN_FQ_NAME : OptInProcessingContext.REQUIRES_OPT_IN_FQ_NAME;
-                message += " should be used in " + (context.isKotlin() ? "Kotlin" : "Java") + " code";
-
-                this.processingContext.report(context, Diagnostic.Kind.ERROR, message, element, markerToRemove);
-            }
-        }
-
-        // TODO verify @SubtypingRequiresOptIn
 
         /* 1. Gather all requirements and opt-ins for the element. */
         Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);

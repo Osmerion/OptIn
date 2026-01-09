@@ -19,6 +19,7 @@ import com.osmerion.optin.tools.apt.internal.checkers.CheckerContext;
 import com.osmerion.optin.tools.apt.internal.checkers.LocalChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.Reporter;
 import com.osmerion.optin.tools.apt.internal.checkers.globals.ExtraConfigurationChecker;
+import com.osmerion.optin.tools.apt.internal.checkers.tree.RequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.SubtypingRequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringContext;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringElementVisitor;
@@ -180,6 +181,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     public void process(Element element) {
         {
             List<LocalChecker> checkers = List.of(
+                new RequiresOptInUsageChecker(),
                 new SubtypingRequiresOptInUsageChecker()
             );
 
