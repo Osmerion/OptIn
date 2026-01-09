@@ -162,51 +162,6 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
         return null;
     }
 
-    public @Nullable RequirementAnnotation deriveRequirementMarker(DeclaredType annotationType) {
-        Element annotationTypeElement = annotationType.asElement();
-
-        RequiresOptIn requiresOptIn = annotationTypeElement.getAnnotation(RequiresOptIn.class);
-        if (requiresOptIn != null) { // IDEA incorrectly warns here (https://youtrack.jetbrains.com/issue/IDEA-382777)
-            String annotationFqName = annotationType.toString();
-            return new RequirementAnnotation.JavaRequirementAnnotation(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
-        }
-
-        for (AnnotationMirror annotationMirror : annotationTypeElement.getAnnotationMirrors()) {
-            if (!OptInProcessingContext.KOTLIN_REQUIRES_OPT_IN_FQ_NAME.equals(annotationMirror.getAnnotationType().toString())) continue;
-
-            String annotationFqName = annotationType.toString();
-            Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(annotationMirror);
-
-            AnnotationValue messageValue = values.entrySet().stream()
-                .filter(entry -> "message".contentEquals(entry.getKey().getSimpleName()))
-                .findAny()
-                .orElseThrow()
-                .getValue();
-
-            if (!(messageValue.getValue() instanceof String message))
-                throw new IllegalStateException("Unexpected type for Kotlin's @RequiresOptIn 'message' element: " + messageValue.getValue().getClass().getSimpleName());
-
-            AnnotationValue levelValue = values.entrySet().stream()
-                .filter(entry -> "level".contentEquals(entry.getKey().getSimpleName()))
-                .findAny()
-                .orElseThrow()
-                .getValue();
-
-            if (!(levelValue.getValue() instanceof VariableElement levelVarElement))
-                throw new IllegalStateException("Unexpected type for Kotlin's @RequiresOptIn 'level' element: " + messageValue.getValue().getClass().getSimpleName());
-
-            RequiresOptIn.Level level = switch (levelVarElement.getSimpleName().toString()) {
-                case "ERROR" -> RequiresOptIn.Level.ERROR;
-                case "WARNING" -> RequiresOptIn.Level.WARNING;
-                default -> throw new IllegalStateException("Unexpected severity level for Kotlin's @RequiresOptIn: " + levelVarElement);
-            };
-
-            return new RequirementAnnotation.KotlinRequirementAnnotation(annotationFqName, message, level);
-        }
-
-        return null;
-    }
-
     public Set<? extends ConsentAnnotation> getAllConsentAnnotations(Element element) {
         boolean isKotlinDeclaration = OptInElementUtil.isKotlin(element);
         TreePath path = this.trees.getPath(element);

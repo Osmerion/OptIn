@@ -156,7 +156,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
                             return null;
                         }
 
-                        return this.gatheringElementVisitor.deriveRequirementMarker(markerValueTypeMirror);
+                        return OptInElementUtil.deriveRequirementMarker(markerValueTypeMirror, this.elements);
                     })
                     .filter(Objects::nonNull)
             )
