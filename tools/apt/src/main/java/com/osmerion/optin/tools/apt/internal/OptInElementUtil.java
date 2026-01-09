@@ -17,8 +17,16 @@ package com.osmerion.optin.tools.apt.internal;
 
 import kotlin.Metadata;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import java.util.List;
+import java.util.Map;
 
 public final class OptInElementUtil {
 
@@ -31,6 +39,48 @@ public final class OptInElementUtil {
                 if (isKotlinDeclaration) return true;
             }
         } while ((element = element.getEnclosingElement()) != null);
+
+        return false;
+    }
+
+    public static boolean isRepeatableContainer(AnnotationMirror mirror, Types types) {
+        TypeElement containerElement = (TypeElement) mirror.getAnnotationType().asElement();
+
+        // 1. Containers must have a 'value()' method
+        List<ExecutableElement> methods = ElementFilter.methodsIn(containerElement.getEnclosedElements());
+        ExecutableElement valueMethod = methods.stream()
+            .filter(m -> m.getSimpleName().contentEquals("value"))
+            .findFirst().orElse(null);
+
+        if (valueMethod == null || valueMethod.getReturnType().getKind() != TypeKind.ARRAY) {
+            return false;
+        }
+
+        // 2. The array component type must be the 'Repeatable' source
+        ArrayType arrayType = (ArrayType) valueMethod.getReturnType();
+        Element repeatableElement = ((DeclaredType) arrayType.getComponentType()).asElement();
+
+        // 3. Check if the repeatable element points to this container
+        AnnotationMirror repeatableMirror = repeatableElement.getAnnotationMirrors().stream()
+            .filter(m -> m.getAnnotationType().toString().equals("java.lang.annotation.Repeatable"))
+            .findFirst().orElse(null);
+
+        if (repeatableMirror != null) {
+            // 1. Get the values of the @Repeatable annotation (it has a 'value' element)
+            Map<? extends ExecutableElement, ? extends AnnotationValue> values = repeatableMirror.getElementValues();
+
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
+                if (entry.getKey().getSimpleName().contentEquals("value")) {
+                    // 2. The value is a TypeMirror (the Class object in the annotation)
+                    TypeMirror containerClassValue = (TypeMirror) entry.getValue().getValue();
+
+                    // 3. Compare the @Repeatable(Value.class) to our current container's type
+                    if (types.isSameType(containerClassValue, containerElement.asType())) {
+                        return true;
+                    }
+                }
+            }
+        }
 
         return false;
     }

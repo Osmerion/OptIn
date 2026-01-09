@@ -77,7 +77,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
         this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, trees);
         SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor = new SubtypingVerifyingTreeVisitor(this, trees, verifyingTreeVisitor);
-        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, javacUtil, subtypingVerifyingTreeVisitor, verifyingTreeVisitor);
+        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, types, javacUtil, subtypingVerifyingTreeVisitor, verifyingTreeVisitor);
     }
 
     @Override

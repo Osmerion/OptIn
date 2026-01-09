@@ -28,6 +28,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.AbstractElementVisitor14;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -42,16 +43,18 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
     private final OptInProcessingContext processingContext;
     private final Elements elements;
     private final Trees trees;
+    private final Types types;
 
     private final JavacUtil17 javacUtil;
 
     private final SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor;
     private final VerifyingTreeVisitor verifyingTreeVisitor;
 
-    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, JavacUtil17 javacUtil, SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor, VerifyingTreeVisitor verifyingTreeVisitor) {
+    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, Types types, JavacUtil17 javacUtil, SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor, VerifyingTreeVisitor verifyingTreeVisitor) {
         this.processingContext = processingContext;
         this.elements = elements;
         this.trees = trees;
+        this.types = types;
 
         this.javacUtil = javacUtil;
 
@@ -269,8 +272,28 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
             element.getAnnotationMirrors().stream()
                 .flatMap(annotationMirror -> {
                     Tree annotationTree = this.trees.getTree(element, annotationMirror);
-                    return this.verifyingTreeVisitor.scan(annotationTree, finalContext).stream();
+                    if (annotationTree == null || !Objects.equals(tree, annotationTree)) return Stream.of(annotationTree);
+                    if (!OptInElementUtil.isRepeatableContainer(annotationMirror, this.types)) return Stream.of();
+
+                    AnnotationValue annotationValue = annotationMirror.getElementValues().entrySet().stream()
+                        .filter(it -> "value".contentEquals(it.getKey().getSimpleName()))
+                        .findFirst()
+                        .orElseThrow()
+                        .getValue();
+
+                    @SuppressWarnings("unchecked")
+                    List<? extends AnnotationMirror> annotationMirrors = (List<? extends AnnotationMirror>) annotationValue.getValue();
+
+                    return annotationMirrors.stream()
+                        .map(unwrappedAnnotationMirror -> {
+                            Tree unwrappedAnnotationTree = this.trees.getTree(element, unwrappedAnnotationMirror);
+                            if (unwrappedAnnotationTree == null || Objects.equals(tree, unwrappedAnnotationTree)) return null;
+
+                            return unwrappedAnnotationTree;
+                        })
+                        .filter(Objects::nonNull);
                 })
+                .flatMap(annotationTree -> this.verifyingTreeVisitor.scan(annotationTree, finalContext).stream())
         )
             .collect(Collectors.toUnmodifiableSet());
 
