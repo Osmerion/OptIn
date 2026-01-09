@@ -25,6 +25,44 @@ import static com.osmerion.optin.tools.apt.compiler.Assertions.*;
 final class SubtypingTest extends AbstractFunctionalTest {
 
     @Test
+    void testAnnotation() {
+        SourceFile anno = createJavaFile(
+            "com.example.TestInterface",
+            """
+            package com.example;
+            
+            @com.osmerion.optin.SubtypingRequiresOptIn(com.example.producer.alpha.AlphaMarker.class)
+            public @interface TestInterface {}
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(anno))
+            .hasFailed()
+            .doesNotHaveWarnings()
+            .hasErrorContaining("@SubtypingRequiresOptIn must only be used on types that allow unrestricted subtyping (i.e. non-sealed, non-final classes and interfaces)");
+    }
+
+    @Test
+    void testFinalClass() {
+        SourceFile anno = createJavaFile(
+            "com.example.TestClass",
+            """
+            package com.example;
+            
+            @com.osmerion.optin.SubtypingRequiresOptIn(com.example.producer.alpha.AlphaMarker.class)
+            public final class TestClass {}
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(anno))
+            .hasFailed()
+            .doesNotHaveWarnings()
+            .hasErrorContaining("@SubtypingRequiresOptIn must only be used on types that allow unrestricted subtyping (i.e. non-sealed, non-final classes and interfaces)");
+    }
+
+    @Test
     void testInterfaceRequiresOptIn_OptIn() {
         SourceFile intf = createJavaFile(
             "com.example.TestInterface",
@@ -105,6 +143,47 @@ final class SubtypingTest extends AbstractFunctionalTest {
         assertThat(compiler.compile(intf, record))
             .hasFailed()
             .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
+    }
+
+    @Test
+    void testSealedInterface() {
+        SourceFile anno = createJavaFile(
+            "com.example.TestInterface",
+            """
+            package com.example;
+            
+            @com.osmerion.optin.SubtypingRequiresOptIn(com.example.producer.alpha.AlphaMarker.class)
+            public sealed interface TestInterface {
+                non-sealed interface Subtype extends TestInterface {}
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(anno))
+            .hasFailed()
+            .doesNotHaveWarnings()
+            .hasErrorContaining("@SubtypingRequiresOptIn must only be used on types that allow unrestricted subtyping (i.e. non-sealed, non-final classes and interfaces)");
+    }
+
+    @Test
+    void testNonSealedInterface() {
+        SourceFile anno = createJavaFile(
+            "com.example.TestInterface",
+            """
+            package com.example;
+            
+            public sealed interface TestInterface {
+                @com.osmerion.optin.SubtypingRequiresOptIn(com.example.producer.alpha.AlphaMarker.class)
+                non-sealed interface Subtype extends TestInterface {}
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(anno))
+            .hasSucceeded()
+            .doesNotHaveWarnings();
     }
 
 }
