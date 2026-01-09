@@ -32,9 +32,8 @@ import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Messager;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -76,8 +75,9 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
         JavacUtil17 javacUtil = JavacUtilGetter.getJavacUtil(elements, types);
 
-        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, javacUtil);
         this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, trees);
+        SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor = new SubtypingVerifyingTreeVisitor(this, trees, verifyingTreeVisitor);
+        this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, javacUtil, subtypingVerifyingTreeVisitor, verifyingTreeVisitor);
     }
 
     @Override
@@ -124,7 +124,63 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     @Override
     public Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element) {
-        return Set.of(); // TODO impl
+        //noinspection RedundantCast
+        return (Set<? extends RequirementAnnotation>) element.getAnnotationMirrors().stream()
+            .flatMap(annotationMirror ->
+                unwrapRepeatedSubtypingRequiresOptIn(annotationMirror).stream()
+                    .map(unwrappedMirror -> {
+                        String annotationFqName = annotationMirror.getAnnotationType().toString();
+                        String markerClassAttributeName;
+
+                        switch (annotationFqName) {
+                            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "value";
+                            case OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "markerClass";
+                            default -> { return null; }
+                        }
+
+                        Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(unwrappedMirror);
+
+                        AnnotationValue markerValue = values.entrySet().stream()
+                            .filter(entry -> markerClassAttributeName.contentEquals(entry.getKey().getSimpleName()))
+                            .findAny()
+                            .orElseThrow()
+                            .getValue();
+
+                        if (!(markerValue.getValue() instanceof DeclaredType markerValueTypeMirror)) {
+                            /*
+                             * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
+                             * in a successful compilation.)
+                             *
+                             * (1) This can happen if a file is not on the classpath, imports are missing, etc.
+                             */
+                            return null;
+                        }
+
+                        return this.gatheringElementVisitor.deriveRequirementMarker(markerValueTypeMirror);
+                    })
+                    .filter(Objects::nonNull)
+            )
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<AnnotationMirror> unwrapRepeatedSubtypingRequiresOptIn(AnnotationMirror mirror) {
+        String annotationFqName = mirror.getAnnotationType().toString();
+        return switch (annotationFqName) {
+            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME, OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME -> {
+                if (!(mirror.getElementValues().entrySet().stream()
+                    .filter(it -> "value".contentEquals(it.getKey().getSimpleName()))
+                    .map(Map.Entry::getValue)
+                    .findAny()
+                    .orElseThrow()
+                    .getValue() instanceof List<?> annotationValue)) {
+                    throw new IllegalStateException();
+                }
+
+                yield (List<AnnotationMirror>) annotationValue;
+            }
+            default -> List.of(mirror);
+        };
     }
 
     /**

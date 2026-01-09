@@ -238,7 +238,7 @@ final class RecordTest extends AbstractFunctionalTest {
             """
             package com.example;
             
-            public record TestRecord(com.example.producer.beta.ClassWithMarkedModule m) {}
+            public record TestRecord(com.example.producer.alpha.markedpackage.UnmarkedClassInMarkedPackage m) {}
             """
         );
 

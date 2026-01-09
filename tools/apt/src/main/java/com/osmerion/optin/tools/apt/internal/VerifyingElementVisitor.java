@@ -19,6 +19,8 @@ import com.osmerion.optin.tools.apt.internal.javac.JavacUtil17;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.Trees;
 
 import javax.lang.model.element.*;
@@ -33,6 +35,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? extends RequirementAnnotation>, VerificationContext> {
 
@@ -42,11 +45,18 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
 
     private final JavacUtil17 javacUtil;
 
-    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, JavacUtil17 javacUtil) {
+    private final SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor;
+    private final VerifyingTreeVisitor verifyingTreeVisitor;
+
+    public VerifyingElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, JavacUtil17 javacUtil, SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor, VerifyingTreeVisitor verifyingTreeVisitor) {
         this.processingContext = processingContext;
         this.elements = elements;
         this.trees = trees;
+
         this.javacUtil = javacUtil;
+
+        this.subtypingVerifyingTreeVisitor = subtypingVerifyingTreeVisitor;
+        this.verifyingTreeVisitor = verifyingTreeVisitor;
     }
 
     private Set<? extends RequirementAnnotation> scan(Element e, VerificationContext context) {
@@ -235,17 +245,40 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
             }
         }
 
+        // TODO verify @SubtypingRequiresOptIn
+
         /* 1. Gather all requirements and opt-ins for the element. */
         Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.scan(createScanningList(element, element.getEnclosedElements()), context);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.scan(this.createScanningList(element, element.getEnclosedElements()), context);
 
+        ClassTree tree = this.trees.getTree(element);
+        if (tree != null) {
+            unclaimedSatisfiedRequirements = Stream.concat(
+                unclaimedSatisfiedRequirements.stream(),
+                tree.accept(this.subtypingVerifyingTreeVisitor, context).stream()
+            )
+                .collect(Collectors.toUnmodifiableSet());
+        }
+
+        VerificationContext finalContext = context;
+        unclaimedSatisfiedRequirements = Stream.concat(
+            unclaimedSatisfiedRequirements.stream(),
+            element.getAnnotationMirrors().stream()
+                .flatMap(annotationMirror -> {
+                    Tree annotationTree = this.trees.getTree(element, annotationMirror);
+                    return this.verifyingTreeVisitor.scan(annotationTree, finalContext).stream();
+                })
+        )
+            .collect(Collectors.toUnmodifiableSet());
+
+        Set<? extends RequirementAnnotation> finalUnclaimedSatisfiedRequirements = unclaimedSatisfiedRequirements;
         @SuppressWarnings("unchecked")
         Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
             .filter(it -> it instanceof OptInAnnotation)
-            .filter(optInAnnotation -> unclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
+            .filter(optInAnnotation -> finalUnclaimedSatisfiedRequirements.stream().noneMatch(((OptInAnnotation) optInAnnotation)::satisfies))
             .collect(Collectors.toUnmodifiableSet());
 
         for (OptInAnnotation optInAnnotation : unusedOptIns) {
