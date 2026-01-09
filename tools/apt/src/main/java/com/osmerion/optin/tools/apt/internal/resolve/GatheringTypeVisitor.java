@@ -16,7 +16,6 @@
 package com.osmerion.optin.tools.apt.internal.resolve;
 
 import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
-import com.osmerion.optin.tools.apt.internal.UnknownTypeException;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 
 import javax.lang.model.element.Element;
@@ -127,7 +126,7 @@ public final class GatheringTypeVisitor extends SimpleTypeVisitor14<Void, Gather
 
     @Override
     public Void visitUnknown(TypeMirror type, GatheringContext context) {
-        throw new UnknownTypeException(type);
+        throw new UnknownTypeException(type, null);
     }
 
     @Override
