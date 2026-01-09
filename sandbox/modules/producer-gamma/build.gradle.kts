@@ -13,10 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.jetbrains.kotlin.gradle.dsl.*
+
 plugins {
     alias(buildDeps.plugins.kotlin.jvm)
     alias(buildDeps.plugins.kotlin.kapt)
     id("com.osmerion.java-base-conventions")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
 }
 
 dependencies {
