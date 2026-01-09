@@ -30,6 +30,9 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class OptInElementUtil {
 
@@ -79,6 +82,66 @@ public final class OptInElementUtil {
         }
 
         return null;
+    }
+
+    public static Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element, Elements elements) {
+        //noinspection RedundantCast
+        return (Set<? extends RequirementAnnotation>) element.getAnnotationMirrors().stream()
+            .flatMap(annotationMirror ->
+                unwrapRepeatedSubtypingRequiresOptIn(annotationMirror).stream()
+                    .map(unwrappedMirror -> {
+                        String annotationFqName = annotationMirror.getAnnotationType().toString();
+                        String markerClassAttributeName;
+
+                        switch (annotationFqName) {
+                            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "value";
+                            case OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "markerClass";
+                            default -> { return null; }
+                        }
+
+                        Map<? extends ExecutableElement, ? extends AnnotationValue> values = elements.getElementValuesWithDefaults(unwrappedMirror);
+
+                        AnnotationValue markerValue = values.entrySet().stream()
+                            .filter(entry -> markerClassAttributeName.contentEquals(entry.getKey().getSimpleName()))
+                            .findAny()
+                            .orElseThrow()
+                            .getValue();
+
+                        if (!(markerValue.getValue() instanceof DeclaredType markerValueTypeMirror)) {
+                            /*
+                             * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
+                             * in a successful compilation.)
+                             *
+                             * (1) This can happen if a file is not on the classpath, imports are missing, etc.
+                             */
+                            return null;
+                        }
+
+                        return OptInElementUtil.deriveRequirementMarker(markerValueTypeMirror, elements);
+                    })
+                    .filter(Objects::nonNull)
+            )
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<AnnotationMirror> unwrapRepeatedSubtypingRequiresOptIn(AnnotationMirror mirror) {
+        String annotationFqName = mirror.getAnnotationType().toString();
+        return switch (annotationFqName) {
+            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME, OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME -> {
+                if (!(mirror.getElementValues().entrySet().stream()
+                    .filter(it -> "value".contentEquals(it.getKey().getSimpleName()))
+                    .map(Map.Entry::getValue)
+                    .findAny()
+                    .orElseThrow()
+                    .getValue() instanceof List<?> annotationValue)) {
+                    throw new IllegalStateException();
+                }
+
+                yield (List<AnnotationMirror>) annotationValue;
+            }
+            default -> List.of(mirror);
+        };
     }
 
     public static boolean isKotlin(Element element) {

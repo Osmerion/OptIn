@@ -16,8 +16,10 @@
 package com.osmerion.optin.tools.apt.internal;
 
 import com.osmerion.optin.tools.apt.internal.checkers.CheckerContext;
+import com.osmerion.optin.tools.apt.internal.checkers.LocalChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.Reporter;
 import com.osmerion.optin.tools.apt.internal.checkers.globals.ExtraConfigurationChecker;
+import com.osmerion.optin.tools.apt.internal.checkers.tree.SubtypingRequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringContext;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringElementVisitor;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringTypeVisitor;
@@ -33,7 +35,6 @@ import org.jspecify.annotations.Nullable;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 public final class OptInProcessingContextImpl implements OptInProcessingContext {
 
     private final Set<Element> processedRootElements = new HashSet<>();
+    private final Set<CompilationUnitTree> processedCompilationUnits = new HashSet<>();
 
     private final Configuration configuration;
 
@@ -56,6 +58,8 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     private final VerifyingElementVisitor verifyingElementVisitor;
     private final VerifyingTreeVisitor verifyingTreeVisitor;
+
+    private final CheckerContext checkerContext;
 
     public OptInProcessingContextImpl(
         Configuration configuration,
@@ -78,6 +82,49 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         this.verifyingTreeVisitor = new VerifyingTreeVisitor(this, trees);
         SubtypingVerifyingTreeVisitor subtypingVerifyingTreeVisitor = new SubtypingVerifyingTreeVisitor(this, trees, verifyingTreeVisitor);
         this.verifyingElementVisitor = new VerifyingElementVisitor(this, elements, trees, types, javacUtil, subtypingVerifyingTreeVisitor, verifyingTreeVisitor);
+
+        Reporter reporter = new Reporter() {
+
+            @Override
+            public void report(Diagnostic.Kind kind, String message, @Nullable Element element, @Nullable AnnotationMirror mirror) {
+                Messager messager = OptInProcessingContextImpl.this.messager;
+                Trees trees = OptInProcessingContextImpl.this.trees;
+
+                if (messager != null) {
+                    messager.printMessage(kind, message, element, mirror);
+                } else {
+                    Tree tree = trees.getTree(element, mirror);
+                    TreePath path = trees.getPath(element, mirror); // TODO this handles element == null poorly
+
+                    trees.printMessage(kind, message, tree, path.getCompilationUnit());
+                }
+            }
+
+            @Override
+            public void report(Diagnostic.Kind kind, String message, @Nullable Tree tree, CompilationUnitTree compilationUnit) {
+                OptInProcessingContextImpl.this.trees.printMessage(kind, message, tree, compilationUnit);
+            }
+
+        };
+
+        this.checkerContext = new CheckerContext() {
+
+            @Override
+            public Elements elements() {
+                return OptInProcessingContextImpl.this.elements;
+            }
+
+            @Override
+            public Reporter reporter() {
+                return reporter;
+            }
+
+            @Override
+            public Trees trees() {
+                return trees;
+            }
+
+        };
     }
 
     @Override
@@ -124,69 +171,27 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     @Override
     public Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element) {
-        //noinspection RedundantCast
-        return (Set<? extends RequirementAnnotation>) element.getAnnotationMirrors().stream()
-            .flatMap(annotationMirror ->
-                unwrapRepeatedSubtypingRequiresOptIn(annotationMirror).stream()
-                    .map(unwrappedMirror -> {
-                        String annotationFqName = annotationMirror.getAnnotationType().toString();
-                        String markerClassAttributeName;
-
-                        switch (annotationFqName) {
-                            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "value";
-                            case OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME -> markerClassAttributeName = "markerClass";
-                            default -> { return null; }
-                        }
-
-                        Map<? extends ExecutableElement, ? extends AnnotationValue> values = this.elements.getElementValuesWithDefaults(unwrappedMirror);
-
-                        AnnotationValue markerValue = values.entrySet().stream()
-                            .filter(entry -> markerClassAttributeName.contentEquals(entry.getKey().getSimpleName()))
-                            .findAny()
-                            .orElseThrow()
-                            .getValue();
-
-                        if (!(markerValue.getValue() instanceof DeclaredType markerValueTypeMirror)) {
-                            /*
-                             * If a symbol cannot be found (1), we make sure to return early here. (Note that this should never happen
-                             * in a successful compilation.)
-                             *
-                             * (1) This can happen if a file is not on the classpath, imports are missing, etc.
-                             */
-                            return null;
-                        }
-
-                        return OptInElementUtil.deriveRequirementMarker(markerValueTypeMirror, this.elements);
-                    })
-                    .filter(Objects::nonNull)
-            )
-            .collect(Collectors.toUnmodifiableSet());
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<AnnotationMirror> unwrapRepeatedSubtypingRequiresOptIn(AnnotationMirror mirror) {
-        String annotationFqName = mirror.getAnnotationType().toString();
-        return switch (annotationFqName) {
-            case OptInProcessingContext.SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME, OptInProcessingContext.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_REPEATED_FQ_NAME -> {
-                if (!(mirror.getElementValues().entrySet().stream()
-                    .filter(it -> "value".contentEquals(it.getKey().getSimpleName()))
-                    .map(Map.Entry::getValue)
-                    .findAny()
-                    .orElseThrow()
-                    .getValue() instanceof List<?> annotationValue)) {
-                    throw new IllegalStateException();
-                }
-
-                yield (List<AnnotationMirror>) annotationValue;
-            }
-            default -> List.of(mirror);
-        };
+        return OptInElementUtil.getSubtypingRequirements(element, this.elements);
     }
 
     /**
      * @param element   the root element to verify
      */
     public void process(Element element) {
+        {
+            List<LocalChecker> checkers = List.of(
+                new SubtypingRequiresOptInUsageChecker()
+            );
+
+            TreePath rootPath = this.trees.getPath(element);
+            if (rootPath != null) {
+                CompilationUnitTree compilationUnit = rootPath.getCompilationUnit();
+                if (this.processedCompilationUnits.add(compilationUnit)) {
+                    checkers.forEach(checker -> checker.check(compilationUnit, this.checkerContext));
+                }
+            }
+        }
+
         //noinspection SwitchStatementWithTooFewBranches
         element = switch (element.getSimpleName().toString()) {
             case "module-info" -> this.elements.getModuleOf(element);
@@ -232,51 +237,8 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
      *          been generated by annotation processors. It is not required that analysis has finished.
      */
     public void postProcess() {
-        Reporter reporter = new Reporter() {
-
-            @Override
-            public void report(Diagnostic.Kind kind, String message, @Nullable Element element, @Nullable AnnotationMirror mirror) {
-                Messager messager = OptInProcessingContextImpl.this.messager;
-                Trees trees = OptInProcessingContextImpl.this.trees;
-
-                if (messager != null) {
-                    messager.printMessage(kind, message, element, mirror);
-                } else {
-                    Tree tree = trees.getTree(element, mirror);
-                    TreePath path = trees.getPath(element, mirror);
-
-                    trees.printMessage(kind, message, tree, path.getCompilationUnit());
-                }
-            }
-
-            @Override
-            public void report(Diagnostic.Kind kind, String message, @Nullable Tree tree, CompilationUnitTree compilationUnit) {
-                OptInProcessingContextImpl.this.trees.printMessage(kind, message, tree, compilationUnit);
-            }
-
-        };
-
-        CheckerContext checkerContext = new CheckerContext() {
-
-            @Override
-            public Elements elements() {
-                return OptInProcessingContextImpl.this.elements;
-            }
-
-            @Override
-            public Reporter reporter() {
-                return reporter;
-            }
-
-            @Override
-            public Trees trees() {
-                return trees;
-            }
-
-        };
-
         ExtraConfigurationChecker checker = new ExtraConfigurationChecker(this.configuration);
-        checker.check(checkerContext);
+        checker.check(this.checkerContext);
     }
 
     @Override
