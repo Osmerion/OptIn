@@ -94,8 +94,6 @@ public interface OptInProcessingContext {
 
     void report(Diagnostic.Kind kind, String message, TreePath path);
 
-    void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element);
-
     void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror);
 
     Set<? extends RequirementAnnotation> reportUnsatisfiedRequirements(VerificationContext context, Collection<? extends RequirementAnnotation> requirements, Tree tree);
