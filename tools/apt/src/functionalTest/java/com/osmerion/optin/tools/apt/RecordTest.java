@@ -157,9 +157,11 @@ final class RecordTest extends AbstractFunctionalTest {
             typeName
         );
 
+        String missingMarker = markerName.contains("Kotlin") ?"com.example.producer.alpha.AlphaMarker" : "com.example.producer.gamma.KotlinMarker";
+
         assertThat(compiler.compile(record))
             .hasSucceeded()
-            .hasWarningContaining("unused opt-in: " + markerName);
+            .hasWarningContaining("unused opt-in: " + missingMarker);
     }
 
     @ParameterizedTest
@@ -183,6 +185,23 @@ final class RecordTest extends AbstractFunctionalTest {
         assertThat(compiler.compile(record))
             .hasSucceeded()
             .doesNotHaveWarnings();
+    }
+
+    @Test
+    void testRecordComponent_Undeclared() {
+        SourceFile record = createJavaFile(
+            "com.example.TestRecord",
+            """
+            package com.example;
+            
+            public record TestRecord(com.example.producer.alpha.markedpackage.UnmarkedClassInMarkedPackage m) {}
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(record))
+            .hasFailed()
+            .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
     }
 
     @ParameterizedTest
@@ -228,23 +247,6 @@ final class RecordTest extends AbstractFunctionalTest {
         TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(record))
             .hasSucceeded()
-            .hasWarningContaining("unused opt-in: com.example.producer.alpha.AlphaMarker");
-    }
-
-    @Test
-    void testMissing() {
-        SourceFile record = createJavaFile(
-            "com.example.TestRecord",
-            """
-            package com.example;
-            
-            public record TestRecord(com.example.producer.alpha.markedpackage.UnmarkedClassInMarkedPackage m) {}
-            """
-        );
-
-        TestCompiler compiler = Compilers.javac();
-        assertThat(compiler.compile(record))
-            .hasFailed()
             .hasWarningContaining("unused opt-in: com.example.producer.alpha.AlphaMarker");
     }
 
