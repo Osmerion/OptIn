@@ -162,7 +162,7 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
 
     @Override
     public Set<? extends RequirementAnnotation> visitType(TypeElement element, VerificationContext context) {
-        context = context.withCompilationUnit(this.trees.getPath(element).getCompilationUnit(), OptInElementUtil.isKotlin(element));
+        context = context.withCompilationUnit(this.trees.getPath(element).getCompilationUnit());
 
         /* 1. Gather all requirements and opt-ins for the element. */
         Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);

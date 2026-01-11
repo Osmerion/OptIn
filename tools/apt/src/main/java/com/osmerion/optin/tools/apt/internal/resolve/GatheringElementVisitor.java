@@ -31,8 +31,9 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
-import javax.lang.model.util.Types;import javax.tools.Diagnostic;
-import java.util.*;import java.util.stream.Collectors;
+import javax.lang.model.util.Types;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A {@link ElementVisitor} to gather {@link ConsentAnnotation consent annotations}.
@@ -201,23 +202,9 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
                 if (OptInProcessingContext.OPT_IN_FQ_NAME.equals(annotationFqName)) {
                     markerFactory = OptInAnnotation.JavaOptInAnnotation::new;
                     markerClassAttributeName = "value";
-
-                    if (isKotlin) {
-                        /*
-                         * When kotlin.OptIn is used in Java code, we report an error, but we do NOT abort or fail the
-                         * verification. We basically recover by ignoring the error. This way, users can get more
-                         * meaningful feedback upfront (in some cases).
-                         */
-                        this.processingContext.report(Diagnostic.Kind.ERROR, "kotlin.OptIn should be used in Kotlin code", path);
-                    }
                 } else if (OptInProcessingContext.KOTLIN_OPT_IN_FQ_NAME.equals(annotationFqName)) {
                     markerFactory = OptInAnnotation.KotlinOptInAnnotation::new;
                     markerClassAttributeName = "markerClass";
-
-                    if (!isKotlin) {
-                        /* Same as above... */
-                        this.processingContext.report(Diagnostic.Kind.ERROR, "com.osmerion.optin.OptIn should be used in Java code", path);
-                    }
                 } else {
                     return null;
                 }

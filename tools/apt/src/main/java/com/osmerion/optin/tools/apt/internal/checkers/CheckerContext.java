@@ -15,11 +15,17 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers;
 
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import kotlin.Metadata;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import java.util.Set;
 
 public interface CheckerContext {
@@ -29,6 +35,8 @@ public interface CheckerContext {
     Reporter reporter();
 
     Trees trees();
+
+    Types types();
 
     default TypeElement getTypeElement(String canonicalName) throws NoSuchModuleException, NoSuchTypeException {
         TypeElement type;
@@ -55,6 +63,20 @@ public interface CheckerContext {
         }
 
         return type;
+    }
+
+    default boolean isKotlin(CompilationUnitTree compilationUnit) {
+        Trees trees = this.trees();
+
+        for (Tree typeTree : compilationUnit.getTypeDecls()) {
+            TreePath path = trees.getPath(compilationUnit, typeTree);
+            Element element = trees.getElement(path);
+
+            Metadata kotlinMetadata = element.getAnnotation(Metadata.class);
+            if (kotlinMetadata != null) return true;
+        }
+
+        return false;
     }
 
 }

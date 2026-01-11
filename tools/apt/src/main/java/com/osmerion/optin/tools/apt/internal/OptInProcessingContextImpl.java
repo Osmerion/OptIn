@@ -19,6 +19,8 @@ import com.osmerion.optin.tools.apt.internal.checkers.CheckerContext;
 import com.osmerion.optin.tools.apt.internal.checkers.LocalChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.Reporter;
 import com.osmerion.optin.tools.apt.internal.checkers.globals.ExtraConfigurationChecker;
+import com.osmerion.optin.tools.apt.internal.checkers.tree.JavaAnnotationChecker;
+import com.osmerion.optin.tools.apt.internal.checkers.tree.KotlinAnnotationChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.RequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.SubtypingRequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringContext;
@@ -125,6 +127,11 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
                 return trees;
             }
 
+            @Override
+            public Types types() {
+                return types;
+            }
+
         };
     }
 
@@ -181,6 +188,8 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     public void process(Element element) {
         {
             List<LocalChecker> checkers = List.of(
+                new JavaAnnotationChecker(),
+                new KotlinAnnotationChecker(),
                 new RequiresOptInUsageChecker(),
                 new SubtypingRequiresOptInUsageChecker()
             );
@@ -215,11 +224,6 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
             @Override
             public @Nullable CompilationUnitTree getCompilationUnit() {
                 return (rootPath != null) ? rootPath.getCompilationUnit() : null;
-            }
-
-            @Override
-            public boolean isKotlin() {
-                return isKotlinDeclaration;
             }
 
             @Override

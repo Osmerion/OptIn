@@ -153,7 +153,7 @@ public final class KotlinTest extends AbstractFunctionalTest {
             """
             package com.example
             
-            @com.osmerion.optin.RequiresOptIn
+            @RequiresOptIn
             annotation class Marker
             """
         );

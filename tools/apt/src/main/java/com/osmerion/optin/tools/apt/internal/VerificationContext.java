@@ -42,9 +42,6 @@ public interface VerificationContext {
         return TreePath.getPath(this.getCompilationUnit(), tree);
     }
 
-    /** {@return {@code true} if the current context is for a Kotlin file, or {@code false} otherwise} */
-    boolean isKotlin();
-
     /**
      * {@return {@code true} if the given requirement is satisfied in this context, or {@code false} otherwise}
      *
@@ -61,12 +58,12 @@ public interface VerificationContext {
      * @param annotations   the additional annotations for the annotation context
      */
     default VerificationContext withAnnotations(Collection<? extends ConsentAnnotation> annotations) {
-        return new VerificationContextDelegate(this, this.getCompilationUnit(), this.isKotlin(), annotations);
+        return new VerificationContextDelegate(this, this.getCompilationUnit(), annotations);
     }
 
-    default VerificationContext withCompilationUnit(CompilationUnitTree compilationUnit, boolean isKotlin) {
+    default VerificationContext withCompilationUnit(CompilationUnitTree compilationUnit) {
         if (compilationUnit.equals(this.getCompilationUnit())) return this;
-        return new VerificationContextDelegate(this, compilationUnit, isKotlin, null);
+        return new VerificationContextDelegate(this, compilationUnit, null);
     }
 
 }
@@ -75,13 +72,11 @@ final class VerificationContextDelegate implements VerificationContext {
 
     private final VerificationContext delegate;
     private final @Nullable CompilationUnitTree compilationUnit;
-    private final boolean isKotlin;
     private final @Nullable Collection<? extends ConsentAnnotation> markers;
 
-    public VerificationContextDelegate(VerificationContext delegate, @Nullable CompilationUnitTree compilationUnit, boolean isKotlin, @Nullable Collection<? extends ConsentAnnotation> markers) {
+    public VerificationContextDelegate(VerificationContext delegate, @Nullable CompilationUnitTree compilationUnit, @Nullable Collection<? extends ConsentAnnotation> markers) {
         this.delegate = delegate;
         this.compilationUnit = compilationUnit;
-        this.isKotlin = isKotlin;
         this.markers = markers;
     }
 
@@ -89,11 +84,6 @@ final class VerificationContextDelegate implements VerificationContext {
     public CompilationUnitTree getCompilationUnit() {
         if (this.compilationUnit != null) return this.compilationUnit;
         return this.delegate.getCompilationUnit();
-    }
-
-    @Override
-    public boolean isKotlin() {
-        return this.isKotlin;
     }
 
     @Override
