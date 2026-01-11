@@ -16,7 +16,6 @@
 package com.osmerion.optin.tools.apt.internal.resolve;
 
 import com.osmerion.optin.RequiresOptIn;
-import com.osmerion.optin.tools.apt.internal.OptInElementUtil;
 import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
@@ -164,14 +163,13 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
     }
 
     public Set<? extends ConsentAnnotation> getAllConsentAnnotations(Element element) {
-        boolean isKotlinDeclaration = OptInElementUtil.isKotlin(element);
         TreePath path = this.trees.getPath(element);
 
         List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
         Set<ConsentAnnotation> markers = new HashSet<>();
 
         for (AnnotationMirror annotationMirror : annotationMirrors) {
-            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(path, annotationMirror, isKotlinDeclaration);
+            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(path, annotationMirror);
 
             if (!optInMarkers.isEmpty()) {
                 markers.addAll(optInMarkers);
@@ -185,7 +183,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
         return Set.copyOf(markers);
     }
 
-    private List<? extends ConsentAnnotation> deriveOptInMarkers(TreePath path, AnnotationMirror mirror, boolean isKotlin) {
+    private List<? extends ConsentAnnotation> deriveOptInMarkers(TreePath path, AnnotationMirror mirror) {
         //noinspection NullableProblems
         return this.unwrapRepeatedOptIns(mirror).stream()
             .map(unwrappedMirror -> {

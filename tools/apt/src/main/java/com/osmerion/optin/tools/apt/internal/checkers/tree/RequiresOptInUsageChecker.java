@@ -15,7 +15,6 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers.tree;
 
-import com.osmerion.optin.tools.apt.internal.OptInElementUtil;
 import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
 import com.osmerion.optin.tools.apt.internal.checkers.CheckerContext;
 import com.osmerion.optin.tools.apt.internal.checkers.LocalChecker;
@@ -52,16 +51,22 @@ public final class RequiresOptInUsageChecker implements LocalChecker {
         private final CompilationUnitTree compilationUnit;
         private final CheckerContext checkerContext;
 
-        private UsageScanner(CompilationUnitTree compilationUnit, CheckerContext checkerContext) {
+        private final boolean isKotlin;
+
+        private UsageScanner(
+            CompilationUnitTree compilationUnit,
+            CheckerContext checkerContext
+        ) {
             this.compilationUnit = compilationUnit;
             this.checkerContext = checkerContext;
+
+            this.isKotlin = checkerContext.isKotlin(compilationUnit);
         }
 
         @Override
         public Void visitClass(ClassTree node, Void unused) {
             TreePath path = this.checkerContext.trees().getPath(this.compilationUnit, node);
             Element element = this.checkerContext.trees().getElement(path);
-            boolean isKotlin = OptInElementUtil.isKotlin(element);
 
             /*
              * If the type element being verified represents an annotation, we check if it is a marker annotation by
@@ -82,7 +87,7 @@ public final class RequiresOptInUsageChecker implements LocalChecker {
                          * already done by Kotlin's compiler. However, we do our usual checks if kotlin.RequiresOptIn is
                          * used in Java code.
                          */
-                        if (isKotlin) continue;
+                        if (this.isKotlin) continue;
                     }
                     default -> {
                         /* Not a requirement marker. Moving on... */

@@ -216,7 +216,6 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
         if (!this.processedRootElements.add(element)) return;
 
-        boolean isKotlinDeclaration = OptInElementUtil.isKotlin(element);
         TreePath rootPath = this.trees.getPath(element);
 
         VerificationContext verificationContext = new VerificationContext() {

@@ -17,7 +17,6 @@ package com.osmerion.optin.tools.apt.internal;
 
 import com.osmerion.optin.RequiresOptIn;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
-import kotlin.Metadata;
 import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.*;
@@ -142,19 +141,6 @@ public final class OptInElementUtil {
             }
             default -> List.of(mirror);
         };
-    }
-
-    public static boolean isKotlin(Element element) {
-        do {
-            if (element instanceof TypeElement) {
-                Metadata kotlinMetadata = element.getAnnotation(Metadata.class);
-                boolean isKotlinDeclaration = (kotlinMetadata != null);
-
-                if (isKotlinDeclaration) return true;
-            }
-        } while ((element = element.getEnclosingElement()) != null);
-
-        return false;
     }
 
     public static boolean isRepeatableContainer(AnnotationMirror mirror, Types types) {
