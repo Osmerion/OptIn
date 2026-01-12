@@ -18,7 +18,7 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.*;
 import com.sun.source.util.TreePath;
-import com.sun.source.util.TreeScanner;
+import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
 
@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends RequirementAnnotation>, VerificationContext> {
+final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends RequirementAnnotation>, VerificationContext> {
 
     private final OptInProcessingContext processingContext;
     private final Trees trees;
@@ -78,13 +78,13 @@ final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends Req
 
     @Override
     public Set<? extends RequirementAnnotation> visitClass(ClassTree node, VerificationContext context) {
-        Element element = this.trees.getElement(context.getPath(node));
+        Element element = this.trees.getElement(this.getCurrentPath());
         return this.processingContext.verifyElement(element, context);
     }
 
     @Override
     public Set<? extends RequirementAnnotation> visitIdentifier(IdentifierTree node, VerificationContext context) {
-        Element element = this.trees.getElement(context.getPath(node));
+        Element element = this.trees.getElement(this.getCurrentPath());
 
         if (element != null) {
             TypeMirror typeMirror = element.asType();
@@ -97,7 +97,7 @@ final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends Req
 
     @Override
     public Set<? extends RequirementAnnotation> visitMemberSelect(MemberSelectTree node, VerificationContext context) {
-        TreePath path = context.getPath(node);
+        TreePath path = this.getCurrentPath();
         TypeMirror typeMirror = this.trees.getTypeMirror(path);
 
         Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements;
@@ -116,7 +116,7 @@ final class VerifyingTreeVisitor extends TreeScanner<@Nullable Set<? extends Req
 
     @Override
     public Set<? extends RequirementAnnotation> visitMethodInvocation(MethodInvocationTree node, VerificationContext context) {
-        TreePath path = context.getPath(node);
+        TreePath path = this.getCurrentPath();
         if (path == null) return Set.of();
 
         TypeMirror typeMirror = this.trees.getTypeMirror(path);

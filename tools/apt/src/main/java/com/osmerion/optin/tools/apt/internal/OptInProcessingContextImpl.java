@@ -217,12 +217,13 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         if (!this.processedRootElements.add(element)) return;
 
         TreePath rootPath = this.trees.getPath(element);
+        CompilationUnitTree compilationUnit = (rootPath != null) ? rootPath.getCompilationUnit() : null;
 
         VerificationContext verificationContext = new VerificationContext() {
 
             @Override
             public @Nullable CompilationUnitTree getCompilationUnit() {
-                return (rootPath != null) ? rootPath.getCompilationUnit() : null;
+                return compilationUnit;
             }
 
             @Override
@@ -285,7 +286,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     @Override
     public @Nullable Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context) {
         Tree tree = this.trees.getTree(element);
-        return tree.accept(this.verifyingTreeVisitor, context);
+        return this.verifyingTreeVisitor.scan(tree, context);
     }
 
 }
