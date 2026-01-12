@@ -22,6 +22,7 @@ import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 
 import javax.lang.model.element.Element;
@@ -38,23 +39,21 @@ public final class SubtypingRequiresOptInUsageChecker implements LocalChecker {
 
     @Override
     public void check(CompilationUnitTree tree, CheckerContext context) {
-        TreeScanner<?, ?> scanner = new UsageScanner(tree, context);
-        tree.accept(scanner, null);
+        TreeScanner<?, ?> scanner = new UsageScanner(context);
+        scanner.scan(tree, null);
     }
 
-    private static final class UsageScanner extends TreeScanner<Void, Void> {
+    private static final class UsageScanner extends TreePathScanner<Void, Void> {
 
-        private final CompilationUnitTree compilationUnit;
         private final CheckerContext checkerContext;
 
-        private UsageScanner(CompilationUnitTree compilationUnit, CheckerContext checkerContext) {
-            this.compilationUnit = compilationUnit;
+        private UsageScanner(CheckerContext checkerContext) {
             this.checkerContext = checkerContext;
         }
 
         @Override
         public Void visitClass(ClassTree node, Void unused) {
-            TreePath path = this.checkerContext.trees().getPath(this.compilationUnit, node);
+            TreePath path = this.getCurrentPath();
             Element element = this.checkerContext.trees().getElement(path);
 
             Set<? extends RequirementAnnotation> subtypingRequirements = OptInElementUtil.getSubtypingRequirements(element, this.checkerContext.elements());

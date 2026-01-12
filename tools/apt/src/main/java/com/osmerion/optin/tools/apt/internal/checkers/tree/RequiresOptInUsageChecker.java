@@ -21,6 +21,7 @@ import com.osmerion.optin.tools.apt.internal.checkers.LocalChecker;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -43,29 +44,25 @@ public final class RequiresOptInUsageChecker implements LocalChecker {
     @Override
     public void check(CompilationUnitTree tree, CheckerContext context) {
         TreeScanner<?, ?> scanner = new UsageScanner(tree, context);
-        tree.accept(scanner, null);
+        scanner.scan(tree, null);
     }
 
-    private static final class UsageScanner extends TreeScanner<Void, Void> {
+    private static final class UsageScanner extends TreePathScanner<Void, Void> {
 
-        private final CompilationUnitTree compilationUnit;
         private final CheckerContext checkerContext;
-
         private final boolean isKotlin;
 
         private UsageScanner(
             CompilationUnitTree compilationUnit,
             CheckerContext checkerContext
         ) {
-            this.compilationUnit = compilationUnit;
             this.checkerContext = checkerContext;
-
             this.isKotlin = checkerContext.isKotlin(compilationUnit);
         }
 
         @Override
         public Void visitClass(ClassTree node, Void unused) {
-            TreePath path = this.checkerContext.trees().getPath(this.compilationUnit, node);
+            TreePath path = this.getCurrentPath();
             Element element = this.checkerContext.trees().getElement(path);
 
             /*
