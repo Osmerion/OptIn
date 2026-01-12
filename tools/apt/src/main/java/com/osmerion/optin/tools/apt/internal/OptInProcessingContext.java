@@ -18,7 +18,7 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.Tree;
-import com.sun.source.util.TreePath;import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -91,8 +91,6 @@ public interface OptInProcessingContext {
     Set<? extends RequirementAnnotation> getAllUsageRequirements(TypeMirror type);
 
     Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element);
-
-    void report(Diagnostic.Kind kind, String message, TreePath path);
 
     void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror);
 

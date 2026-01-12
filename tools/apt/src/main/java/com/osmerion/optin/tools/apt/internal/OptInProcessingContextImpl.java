@@ -247,11 +247,6 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     }
 
     @Override
-    public void report(Diagnostic.Kind kind, String message, TreePath path) {
-        this.trees.printMessage(kind, message, path.getLeaf(), path.getCompilationUnit());
-    }
-
-    @Override
     public void report(VerificationContext context, Diagnostic.Kind kind, String message, Element element, AnnotationMirror mirror) {
         if (this.messager != null) {
             this.messager.printMessage(kind, message, element, mirror);
