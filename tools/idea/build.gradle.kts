@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ tasks {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2024.1.4")
+        intellijIdeaCommunity("2025.1.7")
 
         bundledPlugin("com.intellij.gradle")
         bundledPlugin("com.intellij.java")
