@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-plugins {
-    alias(buildDeps.plugins.intellij)
-    id("com.osmerion.java-base-conventions")
-}
+@NullMarked
+package com.osmerion.optin.tools.idea.quickfixes;
 
-tasks {
-    buildSearchableOptions {
-        enabled = false
-    }
-}
-
-dependencies {
-    implementation(libs.jspecify)
-
-    intellijPlatform {
-        intellijIdeaCommunity("2025.1.7")
-
-        bundledPlugin("com.intellij.gradle")
-        bundledPlugin("com.intellij.java")
-        bundledPlugin("org.jetbrains.kotlin")
-    }
-}
+import org.jspecify.annotations.NullMarked;
