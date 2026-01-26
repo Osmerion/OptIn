@@ -49,8 +49,6 @@ public final class SubtypingRequiresOptInUsageInspection extends LocalInspection
 
             @Override
             public void visitClass(PsiClass aClass) {
-                super.visitClass(aClass);
-
                 Set<PsiAnnotation> subtypingRequirements = SubtypingRequiresOptInUsageInspection.this.getSubtypingRequirements(aClass);
                 if (subtypingRequirements.isEmpty()) return;
 

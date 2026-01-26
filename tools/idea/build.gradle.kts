@@ -13,9 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(buildDeps.plugins.intellij)
+    alias(buildDeps.plugins.kotlin.jvm)
     id("com.osmerion.java-base-conventions")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
 }
 
 tasks {
