@@ -12,6 +12,10 @@ compile-testing = { module = "com.google.testing.compile:compile-testing", versi
 # https://github.com/ZacSweers/kotlin-compile-testing
 kotlin-compile-testing = { module = "dev.zacsweers.kctfork:core", version = "0.12.1" }
 
+# junit - JUnit4
+# https://github.com/junit-team/junit4
+junit = { module = "junit:junit", version = "4.13.2" }
+
 # org.assertj - AssertJ
 # https://github.com/assertj/assertj
 assertj-core = { module = "org.assertj:assertj-core", version = "3.27.7" }
@@ -26,7 +30,7 @@ kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", ver
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 
 # org.junit - JUnit
-# https://github.com/junit-team/junit5
+# https://github.com/junit-team/junit-framework
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }

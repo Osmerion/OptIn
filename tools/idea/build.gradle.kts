@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdea
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaCommunity
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease.Channel.RELEASE
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -27,14 +31,35 @@ kotlin {
     }
 }
 
-tasks {
-    buildSearchableOptions {
-        enabled = false
+intellijPlatform {
+    buildSearchableOptions = false
+
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "251"
+        }
+    }
+
+    pluginVerification {
+        ides {
+            select {
+                types = listOf(IntellijIdeaCommunity)
+                untilBuild = "252.*"
+            }
+            select {
+                types = listOf(IntellijIdea)
+                sinceBuild = "253"
+                channels = listOf(RELEASE)
+            }
+        }
     }
 }
 
 dependencies {
     implementation(libs.jspecify)
+
+    testImplementation(buildDeps.assertj.core)
+    testImplementation(buildDeps.junit)
 
     intellijPlatform {
         intellijIdeaCommunity("2025.1.7")
@@ -42,5 +67,8 @@ dependencies {
         bundledPlugin("com.intellij.gradle")
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
+
+        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.Plugin.Java)
     }
 }

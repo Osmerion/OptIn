@@ -1,0 +1,2 @@
+@RequiresOptIn
+annotation class OsmerionRequiresOptIn

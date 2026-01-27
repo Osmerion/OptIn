@@ -1,0 +1,2 @@
+@SubclassOptInRequired(Marker::class)
+interface OsmerionSubtypingRequiresOptIn
