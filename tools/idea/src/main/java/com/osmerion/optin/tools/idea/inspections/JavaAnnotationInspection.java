@@ -22,6 +22,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.osmerion.optin.tools.idea.OptInBundle;
+import com.osmerion.optin.tools.idea.OptInConstants;
 
 import java.util.Map;
 
@@ -35,9 +36,9 @@ public final class JavaAnnotationInspection extends LocalInspectionTool {
     private static final String DESCRIPTOR = OptInBundle.message("inspection.java-annotations.descriptor");
 
     private static final Map<String, String> REPLACEMENTS = Map.of(
-        "kotlin.OptIn", "com.osmerion.optin.OptIn",
-        "kotlin.RequiresOptIn", "com.osmerion.optin.RequiresOptIn",
-        "kotlin.SubclassOptInRequired", "com.osmerion.optin.SubtypingRequiresOptIn"
+        OptInConstants.KOTLIN_OPT_IN_FQ_NAME, OptInConstants.OPT_IN_FQ_NAME,
+        OptInConstants.KOTLIN_REQUIRES_OPT_IN_FQ_NAME, OptInConstants.REQUIRES_OPT_IN_FQ_NAME,
+        OptInConstants.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME, OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME
     );
 
     @Override

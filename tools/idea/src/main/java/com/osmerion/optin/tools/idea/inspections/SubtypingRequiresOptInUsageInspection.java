@@ -23,6 +23,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.osmerion.optin.tools.idea.OptInBundle;
+import com.osmerion.optin.tools.idea.OptInConstants;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -68,7 +69,7 @@ public final class SubtypingRequiresOptInUsageInspection extends LocalInspection
     private Set<PsiAnnotation> getSubtypingRequirements(PsiClass aClass) {
         return CachedValuesManager.getCachedValue(aClass, () -> {
             Set<PsiAnnotation> annotations = Arrays.stream(aClass.getAnnotations())
-                .filter(annotation -> "com.osmerion.optin.SubtypingRequiresOptIn".equals(annotation.getQualifiedName()))
+                .filter(annotation -> OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotation.getQualifiedName()))
                 .collect(Collectors.toUnmodifiableSet());
 
             return CachedValueProvider.Result.createSingleDependency(annotations, aClass);

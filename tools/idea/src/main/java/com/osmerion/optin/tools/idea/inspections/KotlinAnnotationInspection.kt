@@ -21,6 +21,7 @@ import com.intellij.codeInspection.util.IntentionName
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElementVisitor
 import com.osmerion.optin.tools.idea.OptInBundle
+import com.osmerion.optin.tools.idea.OptInConstants
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.KaAnnotationCall
 import org.jetbrains.kotlin.analysis.api.resolution.singleCallOrNull
@@ -32,9 +33,9 @@ import org.jetbrains.kotlin.psi.KtVisitorVoid
 private val DESCRIPTOR: String = OptInBundle.message("inspection.kotlin-annotations.descriptor")
 
 private val REPLACEMENTS: Map<String, String> = mapOf(
-    "com.osmerion.optin.OptIn" to "kotlin.OptIn",
-    "com.osmerion.optin.RequiresOptIn" to "kotlin.RequiresOptIn",
-    "com.osmerion.optin.SubtypingRequiresOptIn" to "kotlin.SubclassOptInRequired"
+    OptInConstants.OPT_IN_FQ_NAME to OptInConstants.KOTLIN_OPT_IN_FQ_NAME,
+    OptInConstants.REQUIRES_OPT_IN_FQ_NAME to OptInConstants.KOTLIN_REQUIRES_OPT_IN_FQ_NAME,
+    OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME to OptInConstants.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME
 )
 
 /**
