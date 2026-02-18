@@ -22,7 +22,7 @@ assertj-core = { module = "org.assertj:assertj-core", version = "3.27.7" }
 
 # org.jetbrains:annotations - JetBrains' Annotations for JVM-based languages
 # https://github.com/JetBrains/java-annotations
-jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.2-1" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.1.0" }
 
 # org.jetbrains.kotlin - Kotlin
 # https://github.com/JetBrains/kotlin
