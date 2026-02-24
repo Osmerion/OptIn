@@ -37,8 +37,6 @@ public final class JavaTestCompiler implements TestCompiler {
             .withOptions("--release", 17, "-Xplugin:optIn")
             .withProcessors(new OptInProcessor());
 
-        System.out.println(classpathPropertyValue);
-
         if (useModulePath) {
             compiler = compiler.withOptions("--module-path", "\"" + classpathPropertyValue + "\"");
         } else {
