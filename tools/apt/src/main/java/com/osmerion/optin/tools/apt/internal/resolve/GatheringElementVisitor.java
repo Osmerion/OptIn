@@ -121,7 +121,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
         Element annotationTypeElement = annotationType.asElement();
 
         RequiresOptIn requiresOptIn = annotationTypeElement.getAnnotation(RequiresOptIn.class);
-        if (requiresOptIn != null) { // IDEA incorrectly warns here (https://youtrack.jetbrains.com/issue/IDEA-382777)
+        if (requiresOptIn != null) {
             String annotationFqName = annotationType.toString();
             return new RequirementAnnotation.JavaRequirementAnnotation(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
         }

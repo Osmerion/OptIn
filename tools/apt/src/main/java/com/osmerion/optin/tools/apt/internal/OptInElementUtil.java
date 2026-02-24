@@ -42,7 +42,7 @@ public final class OptInElementUtil {
 
     public static @Nullable RequirementAnnotation deriveRequirementMarker(Element element, Elements elements) {
         RequiresOptIn requiresOptIn = element.getAnnotation(RequiresOptIn.class);
-        if (requiresOptIn != null) { // IDEA incorrectly warns here (https://youtrack.jetbrains.com/issue/IDEA-382777)
+        if (requiresOptIn != null) {
             String annotationFqName = element.toString();
             return new RequirementAnnotation.JavaRequirementAnnotation(annotationFqName, requiresOptIn.message(), requiresOptIn.level());
         }
