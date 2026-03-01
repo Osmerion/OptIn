@@ -22,10 +22,10 @@ public final class OptInBundle {
 
     public static final String BUNDLE = "messages.OptInBundle";
 
-    private static final DynamicBundle ourInstance = new DynamicBundle(OptInBundle.class, BUNDLE);
+    private static final DynamicBundle instance = new DynamicBundle(OptInBundle.class, BUNDLE);
 
     public static String message(@PropertyKey(resourceBundle = BUNDLE) String key, Object... params) {
-        return ourInstance.getMessage(key, params);
+        return instance.getMessage(key, params);
     }
 
     private OptInBundle() {}
