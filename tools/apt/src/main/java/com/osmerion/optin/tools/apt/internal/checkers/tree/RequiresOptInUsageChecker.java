@@ -44,7 +44,8 @@ public final class RequiresOptInUsageChecker implements LocalChecker {
     @Override
     public void check(CompilationUnitTree tree, CheckerContext context) {
         TreeScanner<?, ?> scanner = new UsageScanner(tree, context);
-        scanner.scan(tree, null);
+        TreePath path = context.trees().getPath(tree, tree);
+        scanner.scan(path, null);
     }
 
     private static final class UsageScanner extends TreePathScanner<Void, Void> {

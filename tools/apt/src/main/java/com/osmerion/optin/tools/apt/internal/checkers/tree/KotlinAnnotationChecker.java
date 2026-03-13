@@ -38,7 +38,8 @@ public final class KotlinAnnotationChecker implements LocalChecker {
     public void check(CompilationUnitTree tree, CheckerContext context) {
         if (context.isKotlin(tree)) {
             TreeScanner<?, ?> scanner = new UsageScanner(tree, context);
-            scanner.scan(tree, null);
+            TreePath path = context.trees().getPath(tree, tree);
+            scanner.scan(path, null);
         }
     }
 

@@ -18,7 +18,6 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.Tree;
-import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -110,6 +109,6 @@ public interface OptInProcessingContext {
      * @param element   the element which's tree to process
      * @param context   the verification context
      */
-    @Nullable Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context);
+    Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context);
 
 }

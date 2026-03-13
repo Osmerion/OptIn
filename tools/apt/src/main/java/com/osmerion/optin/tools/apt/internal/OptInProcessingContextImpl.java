@@ -284,9 +284,9 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     }
 
     @Override
-    public @Nullable Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context) {
-        Tree tree = this.trees.getTree(element);
-        return this.verifyingTreeVisitor.scan(tree, context);
+    public Set<? extends RequirementAnnotation> verifyTree(Element element, VerificationContext context) {
+        TreePath path = trees.getPath(element);
+        return this.verifyingTreeVisitor.scan(path, context);
     }
 
 }

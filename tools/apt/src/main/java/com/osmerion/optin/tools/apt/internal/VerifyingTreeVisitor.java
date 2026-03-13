@@ -43,8 +43,15 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
     }
 
     @Override
-    public @Nullable Set<? extends RequirementAnnotation> scan(@Nullable Tree tree, VerificationContext context) {
-        return (tree == null) ? Set.of() : tree.accept(this, context);
+    public Set<? extends RequirementAnnotation> scan(TreePath path, VerificationContext context) {
+        Set<? extends RequirementAnnotation> res = super.scan(path, context);
+        return (res != null) ? res : Set.of();
+    }
+
+    @Override
+    public Set<? extends RequirementAnnotation> scan(@Nullable Tree tree, VerificationContext context) {
+        Set<? extends RequirementAnnotation> res = super.scan(tree, context);
+        return (res != null) ? res : Set.of();
     }
 
     @Override
@@ -54,7 +61,7 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
         if (nodes != null) {
             for (Tree node : nodes) {
                 Set<? extends RequirementAnnotation> res = this.scan(node, context);
-                if (res != null) requirements.addAll(res);
+                requirements.addAll(res);
             }
         }
 
@@ -84,7 +91,10 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
 
     @Override
     public Set<? extends RequirementAnnotation> visitIdentifier(IdentifierTree node, VerificationContext context) {
-        Element element = this.trees.getElement(this.getCurrentPath());
+        TreePath path = this.getCurrentPath();
+        if (path == null) return Set.of();
+
+        Element element = this.trees.getElement(path);
 
         if (element != null) {
             TypeMirror typeMirror = element.asType();

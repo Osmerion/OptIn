@@ -186,7 +186,7 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
             element.getAnnotationMirrors().stream()
                 .flatMap(annotationMirror -> {
                     Tree annotationTree = this.trees.getTree(element, annotationMirror);
-                    if (annotationTree == null || !Objects.equals(tree, annotationTree)) return Stream.of(annotationTree);
+                    if (annotationTree == null || !Objects.equals(tree, annotationTree)) return Stream.of(this.trees.getPath(element, annotationMirror));
                     if (!OptInElementUtil.isRepeatableContainer(annotationMirror, this.types)) return Stream.of();
 
                     AnnotationValue annotationValue = annotationMirror.getElementValues().entrySet().stream()
@@ -203,11 +203,11 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
                             Tree unwrappedAnnotationTree = this.trees.getTree(element, unwrappedAnnotationMirror);
                             if (unwrappedAnnotationTree == null || Objects.equals(tree, unwrappedAnnotationTree)) return null;
 
-                            return unwrappedAnnotationTree;
+                            return this.trees.getPath(element, annotationMirror, annotationValue);
                         })
                         .filter(Objects::nonNull);
                 })
-                .flatMap(annotationTree -> this.verifyingTreeVisitor.scan(annotationTree, finalContext).stream())
+                .flatMap(path -> this.verifyingTreeVisitor.scan(path, finalContext).stream())
         )
             .collect(Collectors.toUnmodifiableSet());
 
