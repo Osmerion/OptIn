@@ -64,7 +64,7 @@ public final class ExtraConfigurationChecker implements GlobalChecker {
         }
 
         /* Verify extra opt-in requirements by checking that they refer to actual (type) elements. */
-        for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraRequirements()) {
+        for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraRequirements().values()) {
             try {
                 context.getTypeElement(extraRequiresOptIn.targetFqName());
             } catch (NoSuchModuleException e) {
@@ -80,7 +80,7 @@ public final class ExtraConfigurationChecker implements GlobalChecker {
          * unrestricted subtyping or annotations (which are then treated as synthetic @SubtypingRequiresOptIn(...)
          * markers on annotated elements.
          */
-        for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraSubtypingRequirements()) {
+        for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraSubtypingRequirements().values()) {
             TypeElement typeElement;
 
             try {

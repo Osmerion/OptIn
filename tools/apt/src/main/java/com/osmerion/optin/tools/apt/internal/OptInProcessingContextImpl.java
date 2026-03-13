@@ -23,6 +23,7 @@ import com.osmerion.optin.tools.apt.internal.checkers.tree.JavaAnnotationChecker
 import com.osmerion.optin.tools.apt.internal.checkers.tree.KotlinAnnotationChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.RequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.SubtypingRequiresOptInUsageChecker;
+import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringContext;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringElementVisitor;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringTypeVisitor;
@@ -44,6 +45,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class OptInProcessingContextImpl implements OptInProcessingContext {
 
@@ -77,7 +79,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         this.messager = messager;
         this.trees = trees;
 
-        this.gatheringElementVisitor = new GatheringElementVisitor(this, elements, trees, types);
+        this.gatheringElementVisitor = new GatheringElementVisitor(this, elements, types);
         this.gatheringTypeVisitor = new GatheringTypeVisitor(this);
 
         JavacUtil17 javacUtil = JavacUtilGetter.getJavacUtil(elements, types);
@@ -113,6 +115,11 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
         this.checkerContext = new CheckerContext() {
 
             @Override
+            public Configuration configuration() {
+                return configuration;
+            }
+
+            @Override
             public Elements elements() {
                 return OptInProcessingContextImpl.this.elements;
             }
@@ -136,8 +143,18 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
     }
 
     @Override
+    public Configuration getConfiguration() {
+        return this.configuration;
+    }
+
+    @Override
     public Set<? extends ConsentAnnotation> getConsentAnnotations(Element element) {
-        return this.gatheringElementVisitor.getAllConsentAnnotations(element);
+        return Stream.concat(
+            this.gatheringElementVisitor.getAllConsentAnnotations(element).stream(),
+            this.configuration.getGlobalOptIns().stream()
+                .map(fq -> new OptInAnnotation.JavaOptInAnnotation(null, fq))
+        )
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -179,7 +196,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     @Override
     public Set<? extends RequirementAnnotation> getSubtypingRequirements(Element element) {
-        return OptInElementUtil.getSubtypingRequirements(element, this.elements);
+        return OptInElementUtil.getSubtypingRequirements(element, this.elements, this.configuration);
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers;
 
+import com.osmerion.optin.tools.apt.internal.Configuration;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
@@ -29,6 +30,8 @@ import javax.lang.model.util.Types;
 import java.util.Set;
 
 public interface CheckerContext {
+
+    Configuration configuration();
 
     Elements elements();
 

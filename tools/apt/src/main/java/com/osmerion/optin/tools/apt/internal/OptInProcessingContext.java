@@ -70,6 +70,8 @@ public interface OptInProcessingContext {
         ElementType.TYPE
     );
 
+    Configuration getConfiguration();
+
     /**
      * {@return all consent-related annotations directly on the given {@code element}}
      *

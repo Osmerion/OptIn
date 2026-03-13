@@ -57,7 +57,7 @@ public final class SubtypingRequiresOptInUsageChecker implements LocalChecker {
             TreePath path = this.getCurrentPath();
             Element element = this.checkerContext.trees().getElement(path);
 
-            Set<? extends RequirementAnnotation> subtypingRequirements = OptInElementUtil.getSubtypingRequirements(element, this.checkerContext.elements());
+            Set<? extends RequirementAnnotation> subtypingRequirements = OptInElementUtil.getSubtypingRequirements(element, this.checkerContext.elements(), this.checkerContext.configuration());
             if (subtypingRequirements.isEmpty()) return null;
 
             switch (element.getKind()) {

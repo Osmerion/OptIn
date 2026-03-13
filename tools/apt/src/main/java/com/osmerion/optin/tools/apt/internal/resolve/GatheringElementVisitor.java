@@ -16,12 +16,11 @@
 package com.osmerion.optin.tools.apt.internal.resolve;
 
 import com.osmerion.optin.RequiresOptIn;
+import com.osmerion.optin.tools.apt.internal.Configuration;
 import com.osmerion.optin.tools.apt.internal.OptInProcessingContext;
 import com.osmerion.optin.tools.apt.internal.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.*;
@@ -43,13 +42,11 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
 
     private final OptInProcessingContext processingContext;
     private final Elements elements;
-    private final Trees trees;
     private final Types types;
 
-    public GatheringElementVisitor(OptInProcessingContext processingContext, Elements elements, Trees trees, Types types) {
+    public GatheringElementVisitor(OptInProcessingContext processingContext, Elements elements, Types types) {
         this.processingContext = processingContext;
         this.elements = elements;
-        this.trees = trees;
         this.types = types;
     }
 
@@ -159,17 +156,26 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
             return new RequirementAnnotation.KotlinRequirementAnnotation(annotationFqName, message, level);
         }
 
+        if (annotationTypeElement instanceof TypeElement typeElement) {
+            String fqName = typeElement.getQualifiedName().toString();
+
+            Configuration configuration = this.processingContext.getConfiguration();
+            Configuration.ExtraRequiresOptIn extraRequiresOptIn = configuration.getExtraRequirements().get(fqName);
+
+            if (extraRequiresOptIn != null) {
+                return new RequirementAnnotation.JavaRequirementAnnotation(fqName, extraRequiresOptIn.message(), extraRequiresOptIn.level());
+            }
+        }
+
         return null;
     }
 
     public Set<? extends ConsentAnnotation> getAllConsentAnnotations(Element element) {
-        TreePath path = this.trees.getPath(element);
-
         List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
         Set<ConsentAnnotation> markers = new HashSet<>();
 
         for (AnnotationMirror annotationMirror : annotationMirrors) {
-            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(path, annotationMirror);
+            List<? extends ConsentAnnotation> optInMarkers = this.deriveOptInMarkers(annotationMirror);
 
             if (!optInMarkers.isEmpty()) {
                 markers.addAll(optInMarkers);
@@ -183,7 +189,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
         return Set.copyOf(markers);
     }
 
-    private List<? extends ConsentAnnotation> deriveOptInMarkers(TreePath path, AnnotationMirror mirror) {
+    private List<? extends ConsentAnnotation> deriveOptInMarkers(AnnotationMirror mirror) {
         //noinspection NullableProblems
         return this.unwrapRepeatedOptIns(mirror).stream()
             .map(unwrappedMirror -> {
@@ -191,7 +197,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
 
                 @FunctionalInterface
                 interface OptInAnnotationFactory {
-                    OptInAnnotation create(TreePath path, AnnotationMirror mirror, String message);
+                    OptInAnnotation create(AnnotationMirror mirror, String message);
                 }
 
                 OptInAnnotationFactory markerFactory;
@@ -225,7 +231,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
                     return null;
                 }
 
-                return markerFactory.create(path, mirror, markerValueTypeMirror.toString());
+                return markerFactory.create(mirror, markerValueTypeMirror.toString());
             })
             .filter(Objects::nonNull)
             .toList();

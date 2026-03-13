@@ -19,8 +19,15 @@ import com.osmerion.optin.RequiresOptIn;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class Configuration {
+
+    private static final Pattern PATTERN_EXTRA_REQUIREMENT = Pattern.compile("^([^\\s,]+),([^\\s,]+),([^,]+)$");
+    private static final Pattern PATTERN_PSEUDO_POSITIONAL_ARG = Pattern.compile("(\\S+)=(.+)");
 
     public static final String OPT_OptIn = "com.osmerion.optin.OptIn";
     public static final String OPT_RequiresOptIn = "com.osmerion.optin.RequiresOptIn";
@@ -31,27 +38,70 @@ public final class Configuration {
         List<String> globalOptIns = (optIn == null) ? null : Arrays.asList(optIn.split(";"));
 
         String requiresOptIn = options.get(OPT_RequiresOptIn);
+        Map<String, ExtraRequiresOptIn> extraRequirements = parseExtraRequiresOptIns(requiresOptIn);
 
-        return new Configuration(globalOptIns, null, null);
+        String subtypingRequiresOptIn = options.get(OPT_SubtypingRequiresOptIn);
+        Map<String, ExtraRequiresOptIn> extraSubtypingRequirements = parseExtraRequiresOptIns(subtypingRequiresOptIn);
+
+        return new Configuration(globalOptIns, extraRequirements, extraSubtypingRequirements);
     }
 
     public static Configuration parse(String... args) {
-        // TODO Figure out how to pass the config to the compiler plugin as args
-        return new Configuration(null, null, null);
+        Map<String, String> options = Arrays.stream(args)
+            .map(arg -> {
+                Matcher matcher = PATTERN_PSEUDO_POSITIONAL_ARG.matcher(arg);
+                if (!matcher.matches()) {
+                    throw new IllegalArgumentException("Invalid argument: " + arg);
+                }
+
+                String option = matcher.group(1);
+                String value = matcher.group(2);
+
+                return Map.entry(option, value);
+            })
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return parse(options);
+    }
+
+    private static Map<String, ExtraRequiresOptIn> parseExtraRequiresOptIns(@Nullable String source) {
+        if (source == null) return Map.of();
+        return Arrays.stream(source.split(";"))
+            .map(Configuration::parseExtraRequiresOptIn)
+            .collect(Collectors.toUnmodifiableMap(ExtraRequiresOptIn::targetFqName, Function.identity()));
+    }
+
+    private static ExtraRequiresOptIn parseExtraRequiresOptIn(String source) {
+        Matcher matcher = PATTERN_EXTRA_REQUIREMENT.matcher(source);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid extra requirement: " + source);
+        }
+
+        String targetFqName = matcher.group(1);
+        String level = matcher.group(2);
+        String message = matcher.group(3);
+
+        RequiresOptIn.Level parsedLevel = switch (level.toLowerCase(Locale.ROOT)) {
+            case "error" -> RequiresOptIn.Level.ERROR;
+            case "warning" -> RequiresOptIn.Level.WARNING;
+            default -> throw new IllegalArgumentException("Level '" + level + "' is not valid: Should be one of: ERROR, WARNING (in '" + source + "')");
+        };
+
+        return new ExtraRequiresOptIn(targetFqName, message, parsedLevel);
     }
 
     private final Set<String> globalOptIns;
-    private final Set<ExtraRequiresOptIn> extraRequirements;
-    private final Set<ExtraRequiresOptIn> extraSubtypingRequirements;
+    private final Map<String, ExtraRequiresOptIn> extraRequirements;
+    private final Map<String, ExtraRequiresOptIn> extraSubtypingRequirements;
 
     private Configuration(
         @Nullable Collection<String> globalOptIns,
-        @Nullable Collection<ExtraRequiresOptIn> extraRequirements,
-        @Nullable Collection<ExtraRequiresOptIn> extraSubtypingRequirements
+        @Nullable Map<String, ExtraRequiresOptIn> extraRequirements,
+        @Nullable Map<String, ExtraRequiresOptIn> extraSubtypingRequirements
     ) {
         this.globalOptIns = (globalOptIns != null) ? Set.copyOf(globalOptIns) : Set.of();
-        this.extraRequirements = (extraRequirements != null) ? Set.copyOf(extraRequirements) : Set.of();
-        this.extraSubtypingRequirements = (extraSubtypingRequirements != null) ? Set.copyOf(extraSubtypingRequirements) : Set.of();
+        this.extraRequirements = (extraRequirements != null) ? Map.copyOf(extraRequirements) : Map.of();
+        this.extraSubtypingRequirements = (extraSubtypingRequirements != null) ? Map.copyOf(extraSubtypingRequirements) : Map.of();
     }
 
     /** {@return the fully-qualified names of the marker annotations to opt-in globally for the current compilation} */
@@ -60,22 +110,28 @@ public final class Configuration {
     }
 
     /**
+     * {@return extra {@link RequiresOptIn opt-in marker annotations}}
      *
-     *
-     * @return
+     * <p>This set may not contain annotation types that already are annotated with {@link RequiresOptIn}.</p>
      */
-    public Set<ExtraRequiresOptIn> getExtraRequirements() {
+    public Map<String, ExtraRequiresOptIn> getExtraRequirements() {
         return this.extraRequirements;
     }
 
-    public Set<ExtraRequiresOptIn> getExtraSubtypingRequirements() {
+    /**
+     * {@return extra {@link com.osmerion.optin.SubtypingRequiresOptIn subtyping opt-in marker annotations}}
+     *
+     * <p>Elements annotated with ane of the extra markers are treated as if they were annotated with {@code SubtypingRequiresOptIn(<marker>)}.
+     * Consequentially, subtyping will require the respective opt-ins.</p>
+     */
+    public Map<String, ExtraRequiresOptIn> getExtraSubtypingRequirements() {
         return this.extraSubtypingRequirements;
     }
 
     /**
-     * An extra
+     * An extra opt-in requirement marker.
      *
-     * <p>If the target is an annotation, it is treated as marker annotation and usages of declarations . Otherwise, the declaration </p>
+     * <p>The target must be an annotation that is treated as marker annotation.</p>
      *
      * @param targetFqName  the fully-qualified name of the declaration with this extra requirement
      * @param message       the {@link RequiresOptIn#message() message} for the requirement
