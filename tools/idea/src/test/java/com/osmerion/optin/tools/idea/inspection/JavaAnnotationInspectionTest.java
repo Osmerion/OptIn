@@ -47,15 +47,15 @@ public final class JavaAnnotationInspectionTest extends LightJavaCodeInsightFixt
     return "src/test/testData/JavaAnnotation";
   }
 
-  public void testOptIn() {
+  public void testKotlinOptIn() {
     this.doTest("KotlinOptIn", OptInBundle.message("inspection.java-annotations.quickfix.name", "com.osmerion.optin.OptIn"));
   }
 
-  public void testRequiresOptIn() {
+  public void testKotlinRequiresOptIn() {
     this.doTest("KotlinRequiresOptIn", OptInBundle.message("inspection.java-annotations.quickfix.name", "com.osmerion.optin.RequiresOptIn"));
   }
 
-  public void testSubtypingRequiresOptIn() {
+  public void testKotlinSubtypingRequiresOptIn() {
     this.doTest("KotlinSubtypingRequiresOptIn", OptInBundle.message("inspection.java-annotations.quickfix.name", "com.osmerion.optin.SubtypingRequiresOptIn"));
   }
 

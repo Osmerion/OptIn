@@ -47,7 +47,7 @@ public final class KotlinAnnotationInspectionTest extends LightJavaCodeInsightFi
     return "src/test/testData/KotlinAnnotation";
   }
 
-  public void testOptIn() {
+  public void testOsmerionOptIn() {
     this.myFixture.addClass(
         """
         package com.osmerion.optin;
@@ -61,7 +61,7 @@ public final class KotlinAnnotationInspectionTest extends LightJavaCodeInsightFi
     this.doTest("OsmerionOptIn", OptInBundle.message("inspection.kotlin-annotations.quickfix.name", "kotlin.OptIn"));
   }
 
-  public void testRequiresOptIn() {
+  public void testOsmerionRequiresOptIn() {
     this.myFixture.addClass(
         """
         package com.osmerion.optin;
@@ -74,7 +74,7 @@ public final class KotlinAnnotationInspectionTest extends LightJavaCodeInsightFi
     this.doTest("OsmerionRequiresOptIn", OptInBundle.message("inspection.kotlin-annotations.quickfix.name", "kotlin.RequiresOptIn"));
   }
 
-  public void testSubtypingRequiresOptIn() {
+  public void testOsmerionSubtypingRequiresOptIn() {
     this.myFixture.addClass(
         """
         package com.osmerion.optin;
