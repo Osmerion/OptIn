@@ -114,8 +114,7 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
         Element element = this.trees.getElement(path);
 
         if (element != null) {
-            TypeMirror typeMirror = element.asType();
-            Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(typeMirror);
+            Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(element);
             return this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
         }
 
