@@ -16,8 +16,10 @@
 package com.osmerion.optin.tools.gradle.plugins
 
 import com.osmerion.optin.tools.gradle.OptInExtension
+import com.osmerion.optin.tools.gradle.OptInSourceSetExtension
 import com.osmerion.optin.tools.gradle.internal.BuildConfig
 import com.osmerion.optin.tools.gradle.internal.OptInExtensionInternal
+import com.osmerion.optin.tools.gradle.internal.OptInSourceSetExtensionInternal
 import com.osmerion.optin.tools.gradle.internal.applyTo
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -57,6 +59,9 @@ public open class OptInPlugin : Plugin<Project> {
         val sourceSets = project.extensions.getByType<SourceSetContainer>()
 
         sourceSets.configureEach {
+            val optInSourceSetExtension = extensions.create(OptInSourceSetExtension::class.java, "optIn", OptInSourceSetExtensionInternal::class.java)
+                as OptInSourceSetExtensionInternal
+
             val aptDependency = extension.artifactGroup.flatMap { artifactGroup ->
                 extension.artifactVersion.map { artifactVersion ->
                     project.dependencyFactory.create(artifactGroup, "tools-apt", artifactVersion)
@@ -70,7 +75,7 @@ public open class OptInPlugin : Plugin<Project> {
                 options.compilerArgumentProviders.add(object : CommandLineArgumentProvider {
 
                     override fun asArguments(): Iterable<String> =
-                        extension.extraMarkerAnnotations.values
+                        optInSourceSetExtension.extraMarkerAnnotations.values
                             .map { extraMarkerAnnotation ->
                                 buildString {
                                     append(extraMarkerAnnotation.name)

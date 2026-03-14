@@ -15,20 +15,6 @@
  */
 package com.osmerion.optin.tools.gradle.internal
 
-import com.osmerion.optin.tools.gradle.Level
 import com.osmerion.optin.tools.gradle.OptInExtension
 
-internal abstract class OptInExtensionInternal : OptInExtension {
-
-    internal val extraMarkerAnnotations = mutableMapOf<String, MarkerAnnotation>()
-
-    override fun requiresOptIn(annotation: String, message: String?, level: Level) {
-        require(annotation !in extraMarkerAnnotations)
-        require(message == null || ';' !in message) { "The message may not contain ';'." }
-
-        extraMarkerAnnotations[annotation] = MarkerAnnotation(annotation, message, level)
-    }
-
-    data class MarkerAnnotation(val name: String, val message: String?, val level: Level)
-
-}
+internal abstract class OptInExtensionInternal : OptInExtension

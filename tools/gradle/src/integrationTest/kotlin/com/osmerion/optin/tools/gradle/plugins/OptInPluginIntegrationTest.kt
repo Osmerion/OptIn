@@ -15,7 +15,7 @@
  */
 package com.osmerion.optin.tools.gradle.plugins
 
-import com.osmerion.optin.tools.gradle.OptInExtension
+import com.osmerion.optin.tools.gradle.optIn
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.tasks.SourceSetContainer
@@ -65,18 +65,22 @@ class OptInPluginIntegrationTest {
         project.pluginManager.apply(OptInPlugin::class.java)
         project.pluginManager.apply(JavaLibraryPlugin::class.java)
 
-        val optInExtension = project.extensions.getByType<OptInExtension>()
-        optInExtension.requiresOptIn("com.google.common.annotations.Beta")
-
         val sourceSets = project.extensions.getByType<SourceSetContainer>()
-        assertTrue(sourceSets.isNotEmpty())
-        sourceSets.forEach { sourceSet ->
-            val task = project.tasks.getByName<JavaCompile>(sourceSet.compileJavaTaskName)
+        val mainSourceSet = sourceSets.getByName("main")
+        val testSourceSet = sourceSets.getByName("test")
 
-            val compilerArgs = task.options.allCompilerArgs
-            assertEquals(1, compilerArgs.size)
-            assertEquals("-Acom.osmerion.optin.RequiresOptIn='com.google.common.annotations.Beta,error'", compilerArgs.single())
+        mainSourceSet.optIn {
+            requiresOptIn("com.google.common.annotations.Beta")
         }
+
+        val compileJavaMain = project.tasks.getByName<JavaCompile>(mainSourceSet.compileJavaTaskName)
+
+        val compilerArgs = compileJavaMain.options.allCompilerArgs
+        assertEquals(1, compilerArgs.size)
+        assertEquals("-Acom.osmerion.optin.RequiresOptIn='com.google.common.annotations.Beta,error'", compilerArgs.single())
+
+        val compileJavaTest = project.tasks.getByName<JavaCompile>(testSourceSet.compileJavaTaskName)
+        assertEquals(0, compileJavaTest.options.allCompilerArgs.size)
     }
 
 }

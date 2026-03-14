@@ -40,27 +40,4 @@ public interface OptInExtension {
      */
     public val artifactVersion: Property<String>
 
-    /**
-     * Configures the OptIn verification to treat the annotation with the given name as a marker annotation.
-     *
-     * This allows seamless integration of annotations from third-party libraries into the opt-in mechanism. This is
-     * useful when working with libraries that have custom annotations (for example) for unstable APIs without
-     * first-party support for OptIn:
-     * ```
-     * requiresOptIn("com.google.common.annotations.Beta")
-     * ```
-     *
-     * @param annotation    the fully qualified name of the annotation
-     * @param message       the message to be reported on usages of API without an explicit opt-in
-     * @param level         the severity of the diagnostic that is reported on usages which don't satisfy the opt-in
-     *                      requirement
-     *
-     * @since   0.1.0
-     */
-    public fun requiresOptIn(
-        annotation: String,
-        message: String? = null,
-        level: Level = Level.ERROR
-    )
-
 }
