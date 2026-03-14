@@ -3,7 +3,7 @@
 The OptIn Gradle plugin can be used so simplify working with OptIn in Gradle projects by reducing the amount of required
 configuration.
 
-The plugin automatically sets up the [OptIn annotation processor](./annotation-processor.md) for all applicable source-sets
+The plugin automatically sets up the [OptIn annotation processor](javac.md) for all applicable source-sets
 when a JVM ecosystem plugin is detected.
 
 
