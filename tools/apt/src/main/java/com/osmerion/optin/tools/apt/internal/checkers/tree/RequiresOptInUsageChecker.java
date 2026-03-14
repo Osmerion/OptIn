@@ -33,6 +33,7 @@ import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * A {@link LocalChecker checker} that verifies marker annotations.
@@ -109,7 +110,7 @@ public final class RequiresOptInUsageChecker implements LocalChecker {
                     .toList();
 
                 if (!invalidTargets.isEmpty()) {
-                    String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets);
+                    String message = String.format(Locale.ROOT, "@RequiresOptIn marker annotation cannot be used on: %s", invalidTargets.stream().map(ElementType::name).collect(Collectors.joining(", ")));
                     this.checkerContext.reporter().error(message, element);
                 }
 
