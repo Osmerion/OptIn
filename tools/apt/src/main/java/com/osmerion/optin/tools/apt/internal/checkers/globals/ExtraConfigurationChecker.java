@@ -15,6 +15,7 @@
  */
 package com.osmerion.optin.tools.apt.internal.checkers.globals;
 
+import com.osmerion.optin.RequiresOptIn;
 import com.osmerion.optin.tools.apt.internal.OptInElementUtil;
 import com.osmerion.optin.tools.apt.internal.checkers.NoSuchModuleException;
 import com.osmerion.optin.tools.apt.internal.Configuration;
@@ -22,8 +23,9 @@ import com.osmerion.optin.tools.apt.internal.checkers.NoSuchTypeException;
 import com.osmerion.optin.tools.apt.internal.checkers.GlobalChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.CheckerContext;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
+import org.jspecify.annotations.Nullable;
 
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 
 /**
@@ -63,47 +65,40 @@ public final class ExtraConfigurationChecker implements GlobalChecker {
             }
         }
 
-        /* Verify extra opt-in requirements by checking that they refer to actual (type) elements. */
+        /* Verify extra opt-in requirements by checking that they refer to actual annotation types. */
         for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraRequirements().values()) {
-            try {
-                context.getTypeElement(extraRequiresOptIn.targetFqName());
-            } catch (NoSuchModuleException e) {
-                context.reporter().warn("An extra opt-in requirement for type '%s' was configured but module '%s' was not found".formatted(extraRequiresOptIn.targetFqName(), e.name()));
-            } catch (NoSuchTypeException e) {
-                String messageSuffix = (e.module() != null) ? " (in module '%s')".formatted(e.module().getSimpleName()) : "";
-                context.reporter().warn("An extra opt-in requirement for type '%s' was configured but type '%s' was not found in module".formatted(extraRequiresOptIn.targetFqName(), e.name()) + messageSuffix);
+            TypeElement typeElement = verifyExtraOptInRequirement(context, extraRequiresOptIn, "opt-in requirement");
+
+            if (typeElement != null && typeElement.getAnnotation(RequiresOptIn.class) != null) {
+                context.reporter().error("Redundant extra opt-in requirement specified for type '%s'".formatted(extraRequiresOptIn.targetFqName()), typeElement);
             }
         }
 
-        /*
-         * Verify extra opt-in requirements by checking that they refer to actual (type) elements that allow
-         * unrestricted subtyping or annotations (which are then treated as synthetic @SubtypingRequiresOptIn(...)
-         * markers on annotated elements.
-         */
         for (Configuration.ExtraRequiresOptIn extraRequiresOptIn : this.configuration.getExtraSubtypingRequirements().values()) {
-            TypeElement typeElement;
-
-            try {
-                typeElement = context.getTypeElement(extraRequiresOptIn.targetFqName());
-            } catch (NoSuchModuleException e) {
-                context.reporter().warn("An extra subtyping opt-in requirement for type '%s' was configured but module '%s' was not found".formatted(extraRequiresOptIn.targetFqName(), e.name()));
-                continue;
-            } catch (NoSuchTypeException e) {
-                String messageSuffix = (e.module() != null) ? " (in module '%s')".formatted(e.module().getSimpleName()) : "";
-                context.reporter().warn("An extra subtyping opt-in requirement for type '%s' was configured but type '%s' was not found in module".formatted(extraRequiresOptIn.targetFqName(), e.name()) + messageSuffix);
-                continue;
-            }
-
-            switch (typeElement.getKind()) {
-                case ANNOTATION_TYPE -> {} // We don't perform any validation to be as flexible as possible
-                case CLASS, INTERFACE -> {
-                    if (typeElement.getModifiers().contains(Modifier.SEALED) || typeElement.getModifiers().contains(Modifier.FINAL)) {
-                        context.reporter().warn("An extra subtyping opt-in requirement was configured for type 'lul' which restricts subtyping (i.e. is final or sealed)");
-                    }
-                }
-                default -> context.reporter().error("An extra subtyping opt-in requirement was configured for '%s' which points unsupported kind: %s".formatted(extraRequiresOptIn.targetFqName(), typeElement.getKind()), typeElement);
-            }
+            verifyExtraOptInRequirement(context, extraRequiresOptIn, "subtyping opt-in requirement");
         }
+    }
+
+    private static @Nullable TypeElement verifyExtraOptInRequirement(CheckerContext context, Configuration.ExtraRequiresOptIn extraRequiresOptIn, String kind) {
+        TypeElement typeElement;
+
+        try {
+            typeElement = context.getTypeElement(extraRequiresOptIn.targetFqName());
+        } catch (NoSuchModuleException e) {
+            context.reporter().warn("An extra %s for type '%s' was configured but module '%s' was not found".formatted(kind, extraRequiresOptIn.targetFqName(), e.name()));
+            return null;
+        } catch (NoSuchTypeException e) {
+            String messageSuffix = (e.module() != null) ? " (in module '%s')".formatted(e.module().getSimpleName()) : "";
+            context.reporter().warn("An extra %s for type '%s' was configured but type '%s' was not found in module".formatted(kind, extraRequiresOptIn.targetFqName(), e.name()) + messageSuffix);
+            return null;
+        }
+
+        if (typeElement.getKind() != ElementKind.ANNOTATION_TYPE) {
+            context.reporter().error("An extra %s for type '%s' was configured but type is not an annotation".formatted(kind, extraRequiresOptIn.targetFqName()), typeElement);
+            return null;
+        }
+
+        return typeElement;
     }
 
 }
