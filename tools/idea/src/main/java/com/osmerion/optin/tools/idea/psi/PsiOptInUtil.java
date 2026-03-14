@@ -204,7 +204,6 @@ public final class PsiOptInUtil {
     }
 
     public static Set<? extends RequirementAnnotation> findSubtypingRequirements(PsiClass aClass) {
-        //noinspection NullableProblems
         return Arrays.stream(aClass.getAnnotations())
             .map(PsiOptInUtil::deriveSubtypingRequirement)
             .filter(Objects::nonNull)
