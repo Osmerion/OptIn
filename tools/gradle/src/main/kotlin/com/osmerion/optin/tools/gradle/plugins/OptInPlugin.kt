@@ -28,6 +28,8 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.*
 import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.util.GradleVersion
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /**
  * The `OptInPlugin` registers the [OptInExtension] and automatically sets up the OptIn annotation processor for Java
@@ -74,9 +76,14 @@ public open class OptInPlugin : Plugin<Project> {
                 @Suppress("ObjectLiteralToLambda")
                 options.compilerArgumentProviders.add(object : CommandLineArgumentProvider {
 
-                    override fun asArguments(): Iterable<String> =
-                        optInSourceSetExtension.extraMarkerAnnotations.values
-                            .map { extraMarkerAnnotation ->
+                    override fun asArguments(): Iterable<String> {
+                        val extraOptIn = optInSourceSetExtension.globalOptIns
+                            .joinToString(separator = ";")
+                            .takeIf(String::isNotEmpty)
+
+                        val extraRequiresOptIn = optInSourceSetExtension.extraMarkerAnnotations
+                            .values
+                            .joinToString(separator = ";") { extraMarkerAnnotation ->
                                 buildString {
                                     append(extraMarkerAnnotation.name)
                                     append(',')
@@ -88,11 +95,45 @@ public open class OptInPlugin : Plugin<Project> {
                                     }
                                 }
                             }
-                            .takeIf(List<*>::isNotEmpty)
-                            ?.joinToString(separator = ";")
-                            ?.let { "-Acom.osmerion.optin.RequiresOptIn='$it'" }
-                            ?.let(::listOf) ?: emptyList()
+                            .takeIf(String::isNotEmpty)
 
+                        val extraSubtypingRequiresOptIn = optInSourceSetExtension.extraSubtypingMarkerAnnotations
+                            .values
+                            .joinToString(separator = ";") { extraMarkerAnnotation ->
+                                buildString {
+                                    append(extraMarkerAnnotation.name)
+                                    append(',')
+                                    append(extraMarkerAnnotation.level.value)
+
+                                    if (extraMarkerAnnotation.message != null) {
+                                        append(',')
+                                        append(extraMarkerAnnotation.message)
+                                    }
+                                }
+                            }
+                            .takeIf(String::isNotEmpty)
+
+                        return buildList {
+                            val pluginArgs = mutableListOf<String>()
+
+                            extraOptIn?.let {
+                                add("-Acom.osmerion.optin.OptIn=\"$it\"")
+                                pluginArgs.add("com.osmerion.optin.OptIn=$it")
+                            }
+
+                            extraRequiresOptIn?.let {
+                                add("-Acom.osmerion.optin.RequiresOptIn=\"$it\"")
+                                pluginArgs.add("com.osmerion.optin.RequiresOptIn=$it")
+                            }
+
+                            extraSubtypingRequiresOptIn?.let {
+                                add("-Acom.osmerion.optin.SubtypingRequiresOptIn=\"$it\"")
+                                pluginArgs.add("com.osmerion.optin.SubtypingRequiresOptIn=$it")
+                            }
+
+                            add("-Xplugin:optIn ${pluginArgs.joinToString(separator = " ") { URLEncoder.encode(it, StandardCharsets.UTF_8) }}")
+                        }
+                    }
                 })
             }
         }

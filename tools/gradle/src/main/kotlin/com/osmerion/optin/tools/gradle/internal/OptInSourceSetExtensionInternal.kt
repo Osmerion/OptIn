@@ -20,13 +20,29 @@ import com.osmerion.optin.tools.gradle.OptInSourceSetExtension
 
 internal abstract class OptInSourceSetExtensionInternal : OptInSourceSetExtension {
 
+    internal val globalOptIns = mutableSetOf<String>()
+
+    override fun optIn(annotation: String) {
+        require(annotation !in globalOptIns) { "The annotation '$annotation' has already been registered'" }
+        globalOptIns += annotation
+    }
+
     internal val extraMarkerAnnotations = mutableMapOf<String, MarkerAnnotation>()
 
     override fun requiresOptIn(annotation: String, message: String?, level: Level) {
-        require(annotation !in extraMarkerAnnotations)
+        require(annotation !in extraMarkerAnnotations) { "The annotation '$annotation' has already been registered'" }
         require(message == null || ';' !in message) { "The message may not contain ';'." }
 
         extraMarkerAnnotations[annotation] = MarkerAnnotation(annotation, message, level)
+    }
+
+    internal val extraSubtypingMarkerAnnotations = mutableMapOf<String, MarkerAnnotation>()
+
+    override fun subtypingRequiresOptIn(annotation: String, message: String?, level: Level) {
+        require(annotation !in extraSubtypingMarkerAnnotations) { "The annotation '$annotation' has already been registered'" }
+        require(message == null || ';' !in message) { "The message may not contain ';'." }
+
+        extraSubtypingMarkerAnnotations[annotation] = MarkerAnnotation(annotation, message, level)
     }
 
     data class MarkerAnnotation(val name: String, val message: String?, val level: Level)

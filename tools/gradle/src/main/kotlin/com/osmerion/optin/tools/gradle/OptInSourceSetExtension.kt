@@ -37,6 +37,15 @@ public fun SourceSet.optIn(action: Action<OptInSourceSetExtension>) {
 public interface OptInSourceSetExtension {
 
     /**
+     * Adds a global opt-in for the given [marker annotation][annotation].
+     *
+     * @param annotation    the fully qualified name of the marker annotation to opt in to
+     *
+     * @since   0.1.0
+     */
+    public fun optIn(annotation: String)
+
+    /**
      * Configures the OptIn verification to treat the annotation with the given name as a marker annotation.
      *
      * This allows seamless integration of annotations from third-party libraries into the opt-in mechanism. This is
@@ -54,6 +63,23 @@ public interface OptInSourceSetExtension {
      * @since   0.1.0
      */
     public fun requiresOptIn(
+        annotation: String,
+        message: String? = null,
+        level: Level = Level.ERROR
+    )
+
+    /**
+     * Configures the OptIn verification to treat types annotated with the given annotation as being annotated with
+     * `@SubtypingRequiresOptIn(<annotation>.class)`.
+     *
+     * @param annotation    the fully qualified name of the annotation
+     * @param message       the message to be reported on usages of API without an explicit opt-in
+     * @param level         the severity of the diagnostic that is reported on usages which don't satisfy the opt-in
+     *                      requirement
+     *
+     * @since   0.1.0
+     */
+    public fun subtypingRequiresOptIn(
         annotation: String,
         message: String? = null,
         level: Level = Level.ERROR

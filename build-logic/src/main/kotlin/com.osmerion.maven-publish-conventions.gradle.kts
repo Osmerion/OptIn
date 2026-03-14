@@ -52,7 +52,7 @@ publishing {
 
 signing {
     // Only require signing when publishing to a non-local maven repository
-    setRequired { gradle.taskGraph.allTasks.any { it is PublishToMavenRepository } }
+    setRequired { gradle.taskGraph.allTasks.any { it is PublishToMavenRepository && it.repository.name != "FunctionalTest" } }
 
     val signingKey: String? by project
     val signingPassword: String? by project

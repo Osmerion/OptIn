@@ -18,6 +18,8 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.RequiresOptIn;
 import org.jspecify.annotations.Nullable;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -49,6 +51,8 @@ public final class Configuration {
     public static Configuration parse(String... args) {
         Map<String, String> options = Arrays.stream(args)
             .map(arg -> {
+                arg = URLDecoder.decode(arg, StandardCharsets.UTF_8);
+
                 Matcher matcher = PATTERN_PSEUDO_POSITIONAL_ARG.matcher(arg);
                 if (!matcher.matches()) {
                     throw new IllegalArgumentException("Invalid argument: " + arg);

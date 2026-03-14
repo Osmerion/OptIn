@@ -79,6 +79,8 @@ testing {
                 implementation(buildDeps.junit.jupiter.api)
                 implementation(buildDeps.junit.jupiter.params)
 
+                implementation(buildDeps.assertj.core)
+
                 runtimeOnly(buildDeps.junit.jupiter.engine)
                 runtimeOnly(buildDeps.junit.platform.launcher)
             }
@@ -111,6 +113,9 @@ testing {
 
             targets.configureEach {
                 testTask.configure {
+                    dependsOn(project(":opt-in").tasks.named("publishAllPublicationsToFunctionalTestRepository"))
+                    dependsOn(project(":tools-apt").tasks.named("publishAllPublicationsToFunctionalTestRepository"))
+
                     shouldRunAfter(test)
                 }
             }

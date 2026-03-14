@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.gradle
+import com.osmerion.optin.tools.gradle.*
 
-/**
- * Levels used for identifying the severity of using an opt-in API without explicitly declaring it.
- *
- * @since   0.1.0
- */
-public enum class Level(internal val value: String) {
-    /**
-     * Specified that a warning should be reported on undeclared usage of the API.
-     *
-     * @since   0.1.0
-     */
-    WARNING("WARNING"),
+plugins {
+    id("com.osmerion.opt-in")
+    java
+}
 
-    /**
-     * Specifies that undeclared usage of the API should be treated as error.
-     *
-     * @since   0.1.0
-     */
-    ERROR("ERROR")
+sourceSets {
+    named("main") {
+        optIn {
+            requiresOptIn("Marker", "This is an externally declared marker.")
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("com.osmerion.optin:opt-in:0.1.0")
 }
