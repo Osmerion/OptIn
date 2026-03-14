@@ -60,7 +60,7 @@ public final class ExtraConfigurationChecker implements GlobalChecker {
             }
 
             RequirementAnnotation requirement = OptInElementUtil.deriveRequirementMarker(typeElement, context.elements());
-            if (requirement != null) {
+            if (requirement == null) {
                 context.reporter().error("An global opt-in for type '%s' was configured but it is not a marker annotation".formatted(canonicalMarkerName));
             }
         }
