@@ -18,14 +18,17 @@ package com.osmerion.optin.tools.apt.internal;
 import com.osmerion.optin.tools.apt.internal.markers.RequirementAnnotation;
 import com.sun.source.tree.*;
 import com.sun.source.util.SimpleTreeVisitor;
+import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import org.jspecify.annotations.Nullable;
 
 import javax.lang.model.element.Element;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 final class SubtypingVerifyingTreeVisitor extends SimpleTreeVisitor<Set<? extends RequirementAnnotation>, VerificationContext> {
 
@@ -58,11 +61,18 @@ final class SubtypingVerifyingTreeVisitor extends SimpleTreeVisitor<Set<? extend
     }
 
     private Set<? extends RequirementAnnotation> fullScan(@Nullable Tree node, VerificationContext context) {
-        return this.visitor.scan(node, context);
+        if (node == null) return Set.of();
+
+        TreePath path = context.getPath(node);
+        return this.visitor.scan(path, context);
     }
 
     private Set<? extends RequirementAnnotation> fullScan(Iterable<? extends Tree> nodes, VerificationContext context) {
-        return this.visitor.scan(nodes, context);
+        List<TreePath> paths = StreamSupport.stream(nodes.spliterator(), false)
+            .map(context::getPath)
+            .toList();
+
+        return this.visitor.scanPaths(paths, context);
     }
 
     @Override

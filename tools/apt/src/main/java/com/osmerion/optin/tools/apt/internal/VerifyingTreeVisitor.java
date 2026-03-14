@@ -48,13 +48,30 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
         return (res != null) ? res : Set.of();
     }
 
+    public Set<? extends RequirementAnnotation> scanPaths(@Nullable Iterable<? extends TreePath> paths, VerificationContext context) {
+        HashSet<RequirementAnnotation> requirements = new HashSet<>();
+
+        if (paths != null) {
+            for (TreePath path : paths) {
+                Set<? extends RequirementAnnotation> res = this.scan(path, context);
+                requirements.addAll(res);
+            }
+        }
+
+        return requirements;
+    }
+
+    /** @deprecated This should never be invoked manually. */
     @Override
+    @Deprecated
     public Set<? extends RequirementAnnotation> scan(@Nullable Tree tree, VerificationContext context) {
         Set<? extends RequirementAnnotation> res = super.scan(tree, context);
         return (res != null) ? res : Set.of();
     }
 
+    /** @deprecated This should never be invoked manually. */
     @Override
+    @Deprecated
     public Set<? extends RequirementAnnotation> scan(@Nullable Iterable<? extends Tree> nodes, VerificationContext context) {
         HashSet<RequirementAnnotation> requirements = new HashSet<>();
 
