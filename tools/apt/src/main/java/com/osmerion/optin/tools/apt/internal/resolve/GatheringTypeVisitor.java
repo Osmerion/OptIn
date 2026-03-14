@@ -96,7 +96,9 @@ public final class GatheringTypeVisitor extends SimpleTypeVisitor14<Void, Gather
             parameterType.accept(this, context);
         }
 
-        type.getReceiverType().accept(this, context);
+        if (type.getReceiverType() != null) {
+            type.getReceiverType().accept(this, context);
+        }
 
         for (TypeMirror thrownType : type.getThrownTypes()) {
             thrownType.accept(this, context);
