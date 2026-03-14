@@ -15,8 +15,6 @@
  */
 package com.osmerion.optin.tools.apt.internal.markers;
 
-import org.jspecify.annotations.Nullable;
-
 import javax.lang.model.element.AnnotationMirror;
 
 /**
@@ -26,7 +24,7 @@ import javax.lang.model.element.AnnotationMirror;
  */
 public sealed interface OptInAnnotation extends ConsentAnnotation {
 
-    @Nullable AnnotationMirror mirror();
+    AnnotationMirror mirror();
 
     @Override
     default boolean satisfies(RequirementAnnotation marker) {
@@ -34,12 +32,12 @@ public sealed interface OptInAnnotation extends ConsentAnnotation {
     }
 
     record JavaOptInAnnotation(
-        @Override @Nullable AnnotationMirror mirror,
+        @Override AnnotationMirror mirror,
         @Override String fqMarkerName
     ) implements OptInAnnotation {}
 
     record KotlinOptInAnnotation(
-        @Override @Nullable AnnotationMirror mirror,
+        @Override AnnotationMirror mirror,
         @Override String fqMarkerName
     ) implements OptInAnnotation {}
 

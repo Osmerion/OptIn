@@ -23,7 +23,6 @@ import com.osmerion.optin.tools.apt.internal.checkers.tree.JavaAnnotationChecker
 import com.osmerion.optin.tools.apt.internal.checkers.tree.KotlinAnnotationChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.RequiresOptInUsageChecker;
 import com.osmerion.optin.tools.apt.internal.checkers.tree.SubtypingRequiresOptInUsageChecker;
-import com.osmerion.optin.tools.apt.internal.markers.OptInAnnotation;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringContext;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringElementVisitor;
 import com.osmerion.optin.tools.apt.internal.resolve.GatheringTypeVisitor;
@@ -45,7 +44,6 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class OptInProcessingContextImpl implements OptInProcessingContext {
 
@@ -149,12 +147,7 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
     @Override
     public Set<? extends ConsentAnnotation> getConsentAnnotations(Element element) {
-        return Stream.concat(
-            this.gatheringElementVisitor.getAllConsentAnnotations(element).stream(),
-            this.configuration.getGlobalOptIns().stream()
-                .map(fq -> new OptInAnnotation.JavaOptInAnnotation(null, fq))
-        )
-            .collect(Collectors.toUnmodifiableSet());
+        return this.gatheringElementVisitor.getAllConsentAnnotations(element);
     }
 
     @Override
@@ -245,7 +238,8 @@ public final class OptInProcessingContextImpl implements OptInProcessingContext 
 
             @Override
             public boolean isSatisfied(RequirementAnnotation requirement) {
-                return false; // TODO Consider supporting opt-in via CLI arguments
+                Set<String> globalOptIns = OptInProcessingContextImpl.this.configuration.getGlobalOptIns();
+                return globalOptIns.contains(requirement.fqMarkerName());
             }
 
         };
