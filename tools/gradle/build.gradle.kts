@@ -15,6 +15,7 @@
  */
 import io.github.themrmilchmann.gradle.toolchainswitches.ExperimentalToolchainSwitchesApi
 import io.github.themrmilchmann.gradle.toolchainswitches.inferLauncher
+import org.gradle.plugin.compatibility.compatibility
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -60,6 +61,13 @@ gradlePlugin {
             tags.addAll("opt-in")
 
             implementationClass = "com.osmerion.optin.tools.gradle.plugins.OptInPlugin"
+
+            @Suppress("UnstableApiUsage")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }
