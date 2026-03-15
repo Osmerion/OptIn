@@ -44,7 +44,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 gradle-buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.9" }
 
 # com.gradle.plugin-publish - plugin-publish
-plugin-publish = { id = "com.gradle.plugin-publish", version = "2.0.0" }
+plugin-publish = { id = "com.gradle.plugin-publish", version = "2.1.0" }
 
 # io.github.themrmilchmann.gradle.toolchainswitches:gradle-toolchain-switches - Gradle Toolchain Switches Plugin
 # https://github.com/TheMrMilchmann/gradle-toolchain-switches
