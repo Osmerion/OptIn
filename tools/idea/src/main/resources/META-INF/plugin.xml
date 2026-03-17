@@ -47,6 +47,17 @@
     <localInspection
       language="JAVA"
       bundle="messages.OptInBundle"
+      key="inspection.requires-opt-in-usage.name"
+      groupPath="Java"
+      groupBundle="messages.OptInBundle"
+      groupKey="group.opt-in"
+      enabledByDefault="true"
+      level="ERROR"
+      implementationClass="com.osmerion.optin.tools.idea.inspections.RequiresOptInUsageInspection" />
+
+    <localInspection
+      language="JAVA"
+      bundle="messages.OptInBundle"
       key="inspection.subtyping-requires-opt-in-usage.name"
       groupPath="Java"
       groupBundle="messages.OptInBundle"
