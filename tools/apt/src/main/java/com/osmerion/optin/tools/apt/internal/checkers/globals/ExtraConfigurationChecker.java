@@ -95,7 +95,6 @@ public final class ExtraConfigurationChecker implements GlobalChecker {
 
         if (typeElement.getKind() != ElementKind.ANNOTATION_TYPE) {
             context.reporter().error("An extra %s for type '%s' was configured but type is not an annotation".formatted(kind, extraRequiresOptIn.targetFqName()), typeElement);
-            return null;
         }
 
         return typeElement;
