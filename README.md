@@ -9,6 +9,29 @@ A standard for declaring and working with APIs that require explicit opt-in in J
 
 [Learn more!](https://osmerion.github.io/OptIn)
 
+```java
+// Create a requirement marker
+@RequiresOptIn(message = "This API is subject to change and may change without prior notice.")
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@interface ExperimentalNotifications {}
+
+interface MyNotificationProcessor {
+    
+    void sendOldNotification();
+    
+    @ExperimentalNotifications // Declares an opt-in requirement
+    void sendFancyNewNotification();
+    
+}
+
+// Opts-in into the requirement marker
+@OptIn(ExperimentalNotifications.class)
+void onMessage(MyNotificationProcessor processor) {
+    processor.sendFancyNewNotification();
+}
+```
+
 
 ## Building from source
 
