@@ -18,6 +18,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaC
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease.Channel.RELEASE
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(buildDeps.plugins.intellij)
@@ -51,6 +52,18 @@ intellijPlatform {
                 sinceBuild = "253"
                 channels = listOf(RELEASE)
             }
+        }
+    }
+}
+
+tasks {
+    withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            /*
+             * Need to set this again here because something is overriding our config from above. Probably the IntelliJ
+             * platform plugin.
+             */
+            jvmTarget = JvmTarget.JVM_17
         }
     }
 }
