@@ -46,8 +46,8 @@ sourceSets {
             /* Treats Guava's @Beta annotation as marker annotation. */
             requiresOptIn("com.google.common.annotations.Beta")
 
-            /* Treats Gradle's @HasInternalProtocol as marker annotation for subtyping only. */
-            subtypingRequiresOptIn("org.gradle.internal.HasInternalProtocol")
+            /* Treats a fictional @UnstableInheritance as marker annotation for subtyping only. */
+            subtypingRequiresOptIn("com.example.UnstableInheritance")
         }
     }
 }
