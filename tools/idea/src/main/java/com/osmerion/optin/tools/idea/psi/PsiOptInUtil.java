@@ -71,7 +71,7 @@ public final class PsiOptInUtil {
         return deriveRequirementMarker(psiClass);
     }
 
-    private static @Nullable RequirementAnnotation deriveRequirementMarker(PsiClass annotationType) {
+    public static @Nullable RequirementAnnotation deriveRequirementMarker(PsiClass annotationType) {
         if (!annotationType.isAnnotationType()) throw new IllegalArgumentException("Expected annotation type but got: " + annotationType);
 
         String markerFqName = annotationType.getQualifiedName();

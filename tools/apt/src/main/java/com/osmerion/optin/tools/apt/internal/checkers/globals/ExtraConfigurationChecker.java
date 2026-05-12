@@ -29,7 +29,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 
 /**
- * A {@link GlobalChecker checker} that verifies that any additionally configured opt-in and opt-in requirements
+ * A {@link GlobalChecker checker} that verifies that any additionally configured opt-ins and opt-in requirements
  * reference valid, known types.
  *
  * @author  Leon Linhart

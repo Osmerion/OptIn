@@ -22,6 +22,17 @@
   <depends optional="true" config-file="plugin-kotlin.xml">org.jetbrains.kotlin</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+    <globalInspection
+      language="JAVA"
+      bundle="messages.OptInBundle"
+      key="inspection.extra-configuration.name"
+      groupPath="Java"
+      groupBundle="messages.OptInBundle"
+      groupKey="group.opt-in"
+      enabledByDefault="true"
+      level="ERROR"
+      implementationClass="com.osmerion.optin.tools.idea.inspections.ExtraConfigurationInspection" />
+
     <localInspection
       language="JAVA"
       bundle="messages.OptInBundle"
