@@ -16,7 +16,14 @@
 <idea-plugin>
   <id>com.osmerion.optin</id>
   <name>OptIn</name>
-  <vendor url="https://osmerion.com">Osmerion</vendor>
+  <vendor url="https://github.com/Osmerion" email="opensource@osmerion.com">Osmerion</vendor>
+
+  <description><![CDATA[
+    The OptIn plugin for IntelliJ provides inspections and quickfixes for Osmerion's Java port of Kotlin's opt-in
+    mechanism.
+
+    <a href="https://osmerion.github.io/OptIn">Learn more at https://osmerion.github.io/OptIn</a>
+  ]]></description>
 
   <depends>com.intellij.java</depends>
   <depends optional="true" config-file="plugin-kotlin.xml">org.jetbrains.kotlin</depends>
