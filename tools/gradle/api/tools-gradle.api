@@ -9,12 +9,23 @@ public final class com/osmerion/optin/tools/gradle/Level : java/lang/Enum {
 public abstract interface class com/osmerion/optin/tools/gradle/OptInExtension {
 	public abstract fun getArtifactGroup ()Lorg/gradle/api/provider/Property;
 	public abstract fun getArtifactVersion ()Lorg/gradle/api/provider/Property;
-	public abstract fun requireOptIn (Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;)V
-	public static synthetic fun requireOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
 }
 
-public final class com/osmerion/optin/tools/gradle/OptInExtension$DefaultImpls {
-	public static synthetic fun requireOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+public abstract interface class com/osmerion/optin/tools/gradle/OptInSourceSetExtension {
+	public abstract fun optIn (Ljava/lang/String;)V
+	public abstract fun requiresOptIn (Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;)V
+	public static synthetic fun requiresOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInSourceSetExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+	public abstract fun subtypingRequiresOptIn (Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;)V
+	public static synthetic fun subtypingRequiresOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInSourceSetExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+}
+
+public final class com/osmerion/optin/tools/gradle/OptInSourceSetExtension$DefaultImpls {
+	public static synthetic fun requiresOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInSourceSetExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+	public static synthetic fun subtypingRequiresOptIn$default (Lcom/osmerion/optin/tools/gradle/OptInSourceSetExtension;Ljava/lang/String;Ljava/lang/String;Lcom/osmerion/optin/tools/gradle/Level;ILjava/lang/Object;)V
+}
+
+public final class com/osmerion/optin/tools/gradle/OptInSourceSetExtensionKt {
+	public static final fun optIn (Lorg/gradle/api/tasks/SourceSet;Lorg/gradle/api/Action;)V
 }
 
 public class com/osmerion/optin/tools/gradle/plugins/OptInPlugin : org/gradle/api/Plugin {
