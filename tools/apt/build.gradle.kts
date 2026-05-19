@@ -106,6 +106,14 @@ tasks {
         options.release = 20
     }
 
+    named<Test>("java18Test") {
+        failOnNoDiscoveredTests = false
+    }
+
+    named<Test>("java20Test") {
+        failOnNoDiscoveredTests = false
+    }
+
     @Suppress("UnstableApiUsage")
     check {
         dependsOn(testing.suites.named("functionalTest"))
