@@ -156,8 +156,8 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-//        return this.processingContext.verifyTree(element, context);
-        return Set.of();
+        Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(element.asType());
+        return this.processingContext.reportUnsatisfiedRequirements(context, requirements, this.trees.getTree(element));
     }
 
     @Override

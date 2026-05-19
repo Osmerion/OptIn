@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({
     ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.MODULE,
-    ElementType.PACKAGE, ElementType.TYPE
+    ElementType.PACKAGE, ElementType.RECORD_COMPONENT, ElementType.TYPE
 })
 @RequiresOptIn
 public @interface AlphaMarker {}

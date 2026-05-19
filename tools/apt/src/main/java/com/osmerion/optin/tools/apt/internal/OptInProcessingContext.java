@@ -67,6 +67,7 @@ public interface OptInProcessingContext {
         ElementType.METHOD,
         ElementType.MODULE,
         ElementType.PACKAGE,
+        ElementType.RECORD_COMPONENT,
         ElementType.TYPE
     );
 

@@ -166,7 +166,7 @@ final class RecordTest extends AbstractFunctionalTest {
 
     @ParameterizedTest
     @MethodSource("provideComponentTypeArguments")
-    void testRecordComponent_Propagation(TestCompiler compiler, String typeName) {
+    void testRecordComponent_PropagationOnType(TestCompiler compiler, String typeName) {
         SourceFile record = createJavaFile(
             "com.example.TestRecord",
             """
@@ -178,6 +178,61 @@ final class RecordTest extends AbstractFunctionalTest {
             @AlphaMarker
             @KotlinMarker
             public record TestRecord(%s component) {}
+            """,
+            typeName
+        );
+
+        assertThat(compiler.compile(record))
+            .hasSucceeded()
+            .doesNotHaveWarnings();
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideComponentTypeArguments")
+    void testRecordComponent_PropagationOnCtor(TestCompiler compiler, String typeName, String markerName) {
+        SourceFile record = createJavaFile(
+            "com.example.TestRecord",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            import com.example.producer.gamma.*;
+            
+            public record TestRecord(%s component) {
+            
+                @AlphaMarker
+                @KotlinMarker
+                public TestRecord {}
+            
+            }
+            """,
+            typeName
+        );
+
+        assertThat(compiler.compile(record))
+            .hasFailed()
+            .hasErrorContaining("Undeclared optionality: " + markerName)
+            .doesNotHaveWarnings();
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideComponentTypeArguments")
+    void testRecordComponent_PropagationOnCtorAndComponent(TestCompiler compiler, String typeName) {
+        SourceFile record = createJavaFile(
+            "com.example.TestRecord",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            import com.example.producer.gamma.*;
+            
+            public record TestRecord(@AlphaMarker @KotlinMarker %s component) {
+            
+                @AlphaMarker
+                @KotlinMarker
+                public TestRecord {}
+            
+            }
             """,
             typeName
         );

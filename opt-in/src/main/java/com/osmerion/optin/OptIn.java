@@ -46,7 +46,6 @@ import java.lang.annotation.*;
     ElementType.METHOD,
     ElementType.MODULE,
     ElementType.PACKAGE,
-    ElementType.RECORD_COMPONENT,
     ElementType.TYPE
 })
 public @interface OptIn {
@@ -71,7 +70,6 @@ public @interface OptIn {
         ElementType.METHOD,
         ElementType.MODULE,
         ElementType.PACKAGE,
-        ElementType.RECORD_COMPONENT,
         ElementType.TYPE
     })
     @interface Repeated {
