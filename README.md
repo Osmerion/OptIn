@@ -7,8 +7,6 @@
 
 A standard for declaring and working with APIs that require explicit opt-in in Java.
 
-[Learn more!](https://osmerion.github.io/OptIn)
-
 ```java
 // Create a requirement marker
 @RequiresOptIn(message = "This API is subject to change and may change without prior notice.")
@@ -31,6 +29,8 @@ void onMessage(MyNotificationProcessor processor) {
     processor.sendFancyNewNotification();
 }
 ```
+
+[Learn more!](https://osmerion.github.io/OptIn)
 
 
 ## Building from source
