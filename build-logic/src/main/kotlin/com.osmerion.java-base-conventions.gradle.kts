@@ -27,4 +27,16 @@ tasks {
     withType<JavaCompile>().configureEach {
         options.release = 17
     }
+
+    withType<Javadoc>().configureEach {
+        (options as? StandardJavadocDocletOptions)?.apply {
+            tags = listOf(
+                "apiNote:a:API Note:",
+                "implSpec:a:Implementation Requirements:",
+                "implNote:a:Implementation Note:"
+            )
+
+            addStringOption("-release", "17")
+        }
+    }
 }
