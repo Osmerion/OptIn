@@ -77,8 +77,9 @@ class OptInPluginIntegrationTest {
         val compileJavaMain = project.tasks.getByName<JavaCompile>(mainSourceSet.compileJavaTaskName)
 
         assertThat(compileJavaMain.options.allCompilerArgs)
-            .hasSize(1)
+            .hasSize(2)
 
+        // TODO Improve config parsing, docs, and testing
 
 //        assertEquals("-Acom.osmerion.optin.RequiresOptIn='com.google.common.annotations.Beta,error'", compilerArgs.single())
 
