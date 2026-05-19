@@ -62,7 +62,6 @@ gradlePlugin {
 
             implementationClass = "com.osmerion.optin.tools.gradle.plugins.OptInPlugin"
 
-            @Suppress("UnstableApiUsage")
             compatibility {
                 features {
                     configurationCache = true
