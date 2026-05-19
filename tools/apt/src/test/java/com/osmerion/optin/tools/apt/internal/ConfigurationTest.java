@@ -20,6 +20,7 @@ import com.osmerion.optin.tools.apt.internal.Configuration.ExtraRequiresOptIn;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -37,26 +38,46 @@ final class ConfigurationTest {
             .isNotNull()
             .returns(Set.of("com.example.Foo"), from(Configuration::getGlobalOptIns));
 
+        assertThat(Configuration.parse("com.osmerion.optin.RequiresOptIn=com.example.Foo"))
+            .isNotNull()
+            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.map(String.class, ExtraRequiresOptIn.class))
+            .hasSize(1)
+            .extractingByKey("com.example.Foo")
+            .returns("com.example.Foo", from(ExtraRequiresOptIn::targetFqName))
+            .returns(RequiresOptIn.Level.ERROR, from(ExtraRequiresOptIn::level))
+            .returns("This declaration needs opt-in. Its usage must be marked with '@com.example.Foo' or '@OptIn(com.example.Foo.class)", from(ExtraRequiresOptIn::message));
+
+        assertThat(Configuration.parse("com.osmerion.optin.RequiresOptIn=com.example.Foo,WARNING"))
+            .isNotNull()
+            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.map(String.class, ExtraRequiresOptIn.class))
+            .hasSize(1)
+            .extractingByKey("com.example.Foo")
+            .returns("com.example.Foo", from(ExtraRequiresOptIn::targetFqName))
+            .returns(RequiresOptIn.Level.WARNING, from(ExtraRequiresOptIn::level))
+            .returns("This declaration needs opt-in. Its usage must be marked with '@com.example.Foo' or '@OptIn(com.example.Foo.class)", from(ExtraRequiresOptIn::message));
+
         assertThat(Configuration.parse("com.osmerion.optin.RequiresOptIn=com.example.Foo,ERROR,Experimental API"))
             .isNotNull()
-            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.set(ExtraRequiresOptIn.class))
-            .singleElement()
+            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.map(String.class, ExtraRequiresOptIn.class))
+            .hasSize(1)
+            .extractingByKey("com.example.Foo")
             .returns("com.example.Foo", from(ExtraRequiresOptIn::targetFqName))
             .returns(RequiresOptIn.Level.ERROR, from(ExtraRequiresOptIn::level))
             .returns("Experimental API", from(ExtraRequiresOptIn::message));
 
         assertThat(Configuration.parse("com.osmerion.optin.RequiresOptIn=com.example.Foo,ERROR,Experimental API;com.example.Bar,WARNING,Flub"))
             .isNotNull()
-            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.set(ExtraRequiresOptIn.class))
-            .containsExactlyInAnyOrder(
-                new ExtraRequiresOptIn("com.example.Foo", "Experimental API", RequiresOptIn.Level.ERROR),
-                new ExtraRequiresOptIn("com.example.Bar", "Flub", RequiresOptIn.Level.WARNING)
-            );
+            .extracting(Configuration::getExtraRequirements, InstanceOfAssertFactories.map(String.class, ExtraRequiresOptIn.class))
+            .containsAllEntriesOf(Map.of(
+                "com.example.Foo", new ExtraRequiresOptIn("com.example.Foo", "Experimental API", RequiresOptIn.Level.ERROR),
+                "com.example.Bar", new ExtraRequiresOptIn("com.example.Bar", "Flub", RequiresOptIn.Level.WARNING)
+            ));
 
         assertThat(Configuration.parse("com.osmerion.optin.SubtypingRequiresOptIn=com.example.Foo,ERROR,Experimental API"))
             .isNotNull()
-            .extracting(Configuration::getExtraSubtypingRequirements, InstanceOfAssertFactories.set(ExtraRequiresOptIn.class))
-            .singleElement()
+            .extracting(Configuration::getExtraSubtypingRequirements, InstanceOfAssertFactories.map(String.class, ExtraRequiresOptIn.class))
+            .hasSize(1)
+            .extractingByKey("com.example.Foo")
             .returns("com.example.Foo", from(ExtraRequiresOptIn::targetFqName))
             .returns(RequiresOptIn.Level.ERROR, from(ExtraRequiresOptIn::level))
             .returns("Experimental API", from(ExtraRequiresOptIn::message));

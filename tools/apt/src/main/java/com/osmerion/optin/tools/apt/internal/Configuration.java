@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public final class Configuration {
 
-    private static final Pattern PATTERN_EXTRA_REQUIREMENT = Pattern.compile("^([^\\s,]+),([^\\s,]+),([^,]+)$");
+    private static final Pattern PATTERN_EXTRA_REQUIREMENT = Pattern.compile("^([^\\s,]+)(?:,([^\\s,]+)(?:,([^,]+))?)?$");
     private static final Pattern PATTERN_PSEUDO_POSITIONAL_ARG = Pattern.compile("(\\S+)=(.+)");
 
     public static final String OPT_OptIn = "com.osmerion.optin.OptIn";
@@ -85,11 +85,15 @@ public final class Configuration {
         String level = matcher.group(2);
         String message = matcher.group(3);
 
-        RequiresOptIn.Level parsedLevel = switch (level.toLowerCase(Locale.ROOT)) {
+        RequiresOptIn.Level parsedLevel = (level == null) ? RequiresOptIn.Level.ERROR : (switch (level.toLowerCase(Locale.ROOT)) {
             case "error" -> RequiresOptIn.Level.ERROR;
             case "warning" -> RequiresOptIn.Level.WARNING;
             default -> throw new IllegalArgumentException("Level '" + level + "' is not valid: Should be one of: ERROR, WARNING (in '" + source + "')");
-        };
+        });
+
+        if (message == null) {
+            message = "This declaration needs opt-in. Its usage must be marked with '@%s' or '@OptIn(%s.class)".formatted(targetFqName, targetFqName);
+        }
 
         return new ExtraRequiresOptIn(targetFqName, message, parsedLevel);
     }
