@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  *     <li>{@link ElementType#METHOD}</li>
  *     <li>{@link ElementType#MODULE}</li>
  *     <li>{@link ElementType#PACKAGE}</li>
+ *     <li>{@link ElementType#RECORD_COMPONENT}</li>
  *     <li>{@link ElementType#TYPE}</li>
  * </ul>
  *
