@@ -149,14 +149,40 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
 
     @Override
     public Set<? extends RequirementAnnotation> visitRecordComponent(RecordComponentElement element, VerificationContext context) {
-        // https://bugs.openjdk.org/browse/JDK-8295184
+        /*
+         * We check the canonical ctor via tree inspection already, so we need to make sure we don't report unsatisfied
+         * requirements twice. However, there are cases were the ctor might pass validation while the component does
+         * not. For example:
+         *
+         * record ARecord(MarkedClass markedClass) {
+         *   @MyMarker
+         *   public ARecord { ... }
+         * }
+         *
+         * To solve this, we only care about components whose requirements are satisfied in the ctor here.
+         */
 
-        /* 1. Gather all requirements and opt-ins for the element. */
+        ExecutableElement canonicalCtor = (ExecutableElement) element.getEnclosingElement()
+            .getEnclosedElements()
+            .stream()
+            .filter(it -> it instanceof ExecutableElement ee && javacUtil.isCanonicalConstructor(ee))
+            .findFirst().orElseThrow();
+
+        /* 1. Gather all requirements and opt-ins for the canonical ctor. */
+        Collection<? extends ConsentAnnotation> ctorConsentAnnotations = this.processingContext.getConsentAnnotations(canonicalCtor);
+
+        /* 2. Gather all requirements and opt-ins for the component. */
         Collection<? extends ConsentAnnotation> annotations = this.processingContext.getConsentAnnotations(element);
         context = context.withAnnotations(annotations);
 
-        /* 2. Verify the requirements. */
+        /* 3. Verify the requirements that are also verified in the ctor. */
         Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(element.asType());
+
+        requirements = requirements.stream()
+            .filter(requirement -> ctorConsentAnnotations.stream().anyMatch(annotation -> annotation.satisfies(requirement)))
+            .collect(Collectors.toSet());
+
+        // https://bugs.openjdk.org/browse/JDK-8295184
         return this.processingContext.reportUnsatisfiedRequirements(context, requirements, this.trees.getTree(element));
     }
 
