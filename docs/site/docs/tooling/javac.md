@@ -58,15 +58,18 @@ For example, to register a global opt-in:
 -Xplugin:optIn com.osmerion.optin.OptIn=com.example.MyMarker
 ```
 
-> **Important:** Both the annotation processor argument (via `-A`) and the compiler plugin argument (via `-Xplugin`)
-> must be provided with identical values. Mismatches between the two will result in incorrect behaviour.
+:::info
 
+**Important:** Both the annotation processor argument (via `-A`) and the compiler plugin argument (via `-Xplugin`) must
+be provided with identical values. Mismatches between the two will result in incorrect behaviour.
+
+:::
 
 ### Options
 
 #### Global Opt-ins
 
-Key: `com.osmerion.optin.OptIn`<br>
+Key: `com.osmerion.optin.OptIn`<br />
 Value Format: `<fqName>`
 
 Registers a global opt-in for the marker with the given canonical class name (`fqName`). Any declaration requiring that
@@ -85,7 +88,7 @@ each usage site.
 
 #### Extra Opt-in Requirements
 
-Key: `com.osmerion.optin.RequiresOptIn`<br>
+Key: `com.osmerion.optin.RequiresOptIn`<br />
 Value Format: `<fqName>(,<level>(,<message>)?)?`
 
 Instructs the verifier to treat the annotation with the given fully qualified name (`fqName`) as requirement marker.
@@ -105,7 +108,7 @@ verifier.
 
 #### Extra Subtyping Opt-In Requirements
 
-Key: `com.osmerion.optin.SubtypingRequiresOptIn`<br>
+Key: `com.osmerion.optin.SubtypingRequiresOptIn`<br />
 Value Format: `<fqName>(,<level>(,<message>)?)?`
 
 Instructs the verifier to treat the annotation with the given fully qualified name (`fqName`) as requirement marker

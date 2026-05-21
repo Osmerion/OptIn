@@ -8,8 +8,11 @@ title: OptIn Specification
 This document is a draft specification that introduces a mechanism to declare and work with additional opt-in
 requirements that are complementary to Java's visibility modifiers.
 
-> [!NOTE]
-> For a high-level overview of this project, please refer to the [User Guide](user-guide.md) instead.
+:::note
+
+For a high-level overview of this project, please refer to the [User Guide](user-guide.md) instead.
+
+:::
 
 ## Motivation
 
