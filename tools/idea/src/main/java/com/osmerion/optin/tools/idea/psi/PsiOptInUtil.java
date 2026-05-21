@@ -25,6 +25,8 @@ import com.osmerion.optin.tools.idea.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.idea.markers.OptInAnnotation;
 import com.osmerion.optin.tools.idea.markers.RequirementAnnotation;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.asJava.LightClassUtilsKt;
+import org.jetbrains.kotlin.psi.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,9 +68,15 @@ public final class PsiOptInUtil {
         if (nameReferenceElement == null) return null;
 
         PsiElement element = nameReferenceElement.resolve();
-        if (!(element instanceof PsiClass psiClass)) return null;
 
-        return deriveRequirementMarker(psiClass);
+        if (element instanceof PsiClass aClass) {
+            return deriveRequirementMarker(aClass);
+        } else if (element instanceof KtClass ktClass) {
+            PsiClass aClass = LightClassUtilsKt.toLightClass(ktClass);
+            if (aClass != null) return deriveRequirementMarker(aClass);
+        }
+
+        return null;
     }
 
     public static @Nullable RequirementAnnotation deriveRequirementMarker(PsiClass annotationType) {
@@ -82,16 +90,32 @@ public final class PsiOptInUtil {
 
         if (annotation != null) {
             PsiAnnotationMemberValue messageValue = annotation.findAttributeValue("message");
-            if (!(messageValue instanceof PsiLiteral messageLiteral) || !(messageLiteral.getValue() instanceof String message)) return null;
+
+            String message = "";
+            if (messageValue != null) {
+                if ((messageValue instanceof PsiLiteral messageLiteral) && (messageLiteral.getValue() instanceof String m)) {
+                    message = m;
+                } else {
+                    return null;
+                }
+            }
 
             if (message.isEmpty()) {
                 message = OptInBundle.message("inspection.opt-in.missing-opt-in.name", markerFqName);
             }
 
             PsiAnnotationMemberValue levelValue = annotation.findAttributeValue("level");
-            if ((!(levelValue instanceof PsiReferenceExpression levelExpression) || !(levelExpression.resolve() instanceof PsiEnumConstant levelEnumConstant))) return null;
 
-            RequirementAnnotation.Level level = switch (levelEnumConstant.getName()) {
+            String levelString = "ERROR";
+            if (levelValue != null) {
+                if ((levelValue instanceof PsiReferenceExpression levelExpression) && (levelExpression.resolve() instanceof PsiEnumConstant levelEnumConstant)) {
+                    levelString = levelEnumConstant.getName();
+                } else {
+                    return null;
+                }
+            }
+
+            RequirementAnnotation.Level level = switch (levelString) {
                 case "WARNING" -> RequirementAnnotation.Level.WARNING;
                 case "ERROR" -> RequirementAnnotation.Level.ERROR;
                 default -> null;
