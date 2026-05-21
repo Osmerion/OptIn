@@ -24,6 +24,7 @@ sourceSets {
     named("main") {
         optIn {
             requiresOptIn("Marker", "This is an externally declared marker.")
+            subtypingRequiresOptIn("SubtypingMarker", "This is another externally declared marker.")
         }
     }
 }

@@ -9,4 +9,9 @@ public class HelloWorld {
         foo();
     }
 
+    @SubtypingMarker
+    class Base {}
+
+    class Child extends Base {}
+
 }

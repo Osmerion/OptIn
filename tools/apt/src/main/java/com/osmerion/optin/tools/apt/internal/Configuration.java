@@ -37,7 +37,9 @@ public final class Configuration {
 
     public static Configuration parse(Map<String, String> options) {
         String optIn = options.get(OPT_OptIn);
-        List<String> globalOptIns = (optIn == null) ? null : Arrays.asList(optIn.split(";"));
+        List<String> globalOptIns = (optIn == null) ? null : Arrays.stream(optIn.split(";"))
+            .map(it -> URLDecoder.decode(it, StandardCharsets.UTF_8))
+            .toList();
 
         String requiresOptIn = options.get(OPT_RequiresOptIn);
         Map<String, ExtraRequiresOptIn> extraRequirements = parseExtraRequiresOptIns(requiresOptIn);
@@ -51,8 +53,6 @@ public final class Configuration {
     public static Configuration parse(String... args) {
         Map<String, String> options = Arrays.stream(args)
             .map(arg -> {
-                arg = URLDecoder.decode(arg, StandardCharsets.UTF_8);
-
                 Matcher matcher = PATTERN_PSEUDO_POSITIONAL_ARG.matcher(arg);
                 if (!matcher.matches()) {
                     throw new IllegalArgumentException("Invalid argument: " + arg);
@@ -76,6 +76,7 @@ public final class Configuration {
     }
 
     private static ExtraRequiresOptIn parseExtraRequiresOptIn(String source) {
+        source = URLDecoder.decode(source, StandardCharsets.UTF_8);
         Matcher matcher = PATTERN_EXTRA_REQUIREMENT.matcher(source);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid extra requirement: " + source);

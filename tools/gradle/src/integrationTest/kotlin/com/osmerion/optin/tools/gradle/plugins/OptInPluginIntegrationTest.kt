@@ -71,20 +71,29 @@ class OptInPluginIntegrationTest {
         val testSourceSet = sourceSets.getByName("test")
 
         mainSourceSet.optIn {
+            optIn("com.example.Anton")
+            optIn("com.example.Berta")
+
             requiresOptIn("com.google.common.annotations.Beta")
+            requiresOptIn("com.google.common.annotations.Alpha")
+
+            subtypingRequiresOptIn("SubtypingMarker", "This is another externally declared marker.")
         }
 
         val compileJavaMain = project.tasks.getByName<JavaCompile>(mainSourceSet.compileJavaTaskName)
-
         assertThat(compileJavaMain.options.allCompilerArgs)
-            .hasSize(2)
-
-        // TODO Improve config parsing, docs, and testing
-
-//        assertEquals("-Acom.osmerion.optin.RequiresOptIn='com.google.common.annotations.Beta,error'", compilerArgs.single())
+            .containsExactlyInAnyOrder(
+                "-Acom.osmerion.optin.OptIn=com.example.Anton;com.example.Berta",
+                "-Acom.osmerion.optin.RequiresOptIn=com.google.common.annotations.Beta%2CERROR;com.google.common.annotations.Alpha%2CERROR",
+                "-Acom.osmerion.optin.SubtypingRequiresOptIn=SubtypingMarker%2CERROR%2CThis+is+another+externally+declared+marker.",
+                "-Xplugin:optIn com.osmerion.optin.OptIn=com.example.Anton;com.example.Berta com.osmerion.optin.RequiresOptIn=com.google.common.annotations.Beta%2CERROR;com.google.common.annotations.Alpha%2CERROR com.osmerion.optin.SubtypingRequiresOptIn=SubtypingMarker%2CERROR%2CThis+is+another+externally+declared+marker."
+            )
 
         val compileJavaTest = project.tasks.getByName<JavaCompile>(testSourceSet.compileJavaTaskName)
-        assertEquals(0, compileJavaTest.options.allCompilerArgs.size)
+        assertThat(compileJavaTest.options.allCompilerArgs)
+            .containsExactlyInAnyOrder(
+                "-Xplugin:optIn"
+            )
     }
 
 }

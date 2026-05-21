@@ -20,6 +20,7 @@ import com.osmerion.optin.tools.gradle.OptInSourceSetExtension
 import com.osmerion.optin.tools.gradle.internal.BuildConfig
 import com.osmerion.optin.tools.gradle.internal.OptInExtensionInternal
 import com.osmerion.optin.tools.gradle.internal.OptInSourceSetExtensionInternal
+import com.osmerion.optin.tools.gradle.internal.OptInSourceSetExtensionInternal.MarkerAnnotation
 import com.osmerion.optin.tools.gradle.internal.applyTo
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -77,61 +78,60 @@ public open class OptInPlugin : Plugin<Project> {
                 options.compilerArgumentProviders.add(object : CommandLineArgumentProvider {
 
                     override fun asArguments(): Iterable<String> {
+                        fun MarkerAnnotation.toArgString() = buildString {
+                            append(name)
+                            append(',')
+                            append(level.value)
+
+                            if (message != null) {
+                                append(',')
+                                append(message)
+                            }
+                        }
+
                         val extraOptIn = optInSourceSetExtension.globalOptIns
-                            .joinToString(separator = ";")
+                            .joinToString(separator = ";") {
+                                URLEncoder.encode(it, StandardCharsets.UTF_8)
+                            }
                             .takeIf(String::isNotEmpty)
 
                         val extraRequiresOptIn = optInSourceSetExtension.extraMarkerAnnotations
                             .values
-                            .joinToString(separator = ";") { extraMarkerAnnotation ->
-                                buildString {
-                                    append(extraMarkerAnnotation.name)
-                                    append(',')
-                                    append(extraMarkerAnnotation.level.value)
-
-                                    if (extraMarkerAnnotation.message != null) {
-                                        append(',')
-                                        append(extraMarkerAnnotation.message)
-                                    }
-                                }
+                            .map(MarkerAnnotation::toArgString)
+                            .joinToString(separator = ";") {
+                                URLEncoder.encode(it, StandardCharsets.UTF_8)
                             }
                             .takeIf(String::isNotEmpty)
 
                         val extraSubtypingRequiresOptIn = optInSourceSetExtension.extraSubtypingMarkerAnnotations
                             .values
-                            .joinToString(separator = ";") { extraMarkerAnnotation ->
-                                buildString {
-                                    append(extraMarkerAnnotation.name)
-                                    append(',')
-                                    append(extraMarkerAnnotation.level.value)
-
-                                    if (extraMarkerAnnotation.message != null) {
-                                        append(',')
-                                        append(extraMarkerAnnotation.message)
-                                    }
-                                }
+                            .map(MarkerAnnotation::toArgString)
+                            .joinToString(separator = ";") {
+                                URLEncoder.encode(it, StandardCharsets.UTF_8)
                             }
+
                             .takeIf(String::isNotEmpty)
 
                         return buildList {
                             val pluginArgs = mutableListOf<String>()
 
                             extraOptIn?.let {
-                                add("-Acom.osmerion.optin.OptIn=\"$it\"")
+                                add("-Acom.osmerion.optin.OptIn=$it")
                                 pluginArgs.add("com.osmerion.optin.OptIn=$it")
                             }
 
                             extraRequiresOptIn?.let {
-                                add("-Acom.osmerion.optin.RequiresOptIn=\"$it\"")
+                                add("-Acom.osmerion.optin.RequiresOptIn=$it")
                                 pluginArgs.add("com.osmerion.optin.RequiresOptIn=$it")
                             }
 
                             extraSubtypingRequiresOptIn?.let {
-                                add("-Acom.osmerion.optin.SubtypingRequiresOptIn=\"$it\"")
+                                add("-Acom.osmerion.optin.SubtypingRequiresOptIn=$it")
                                 pluginArgs.add("com.osmerion.optin.SubtypingRequiresOptIn=$it")
                             }
 
-                            add("-Xplugin:optIn ${pluginArgs.joinToString(separator = " ") { URLEncoder.encode(it, StandardCharsets.UTF_8) }}")
+                            val pluginArgsString = pluginArgs.joinToString(separator = " ")
+                            add("-Xplugin:optIn${if (pluginArgsString.isNotEmpty()) " $pluginArgsString" else ""}")
                         }
                     }
                 })

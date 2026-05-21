@@ -51,6 +51,7 @@ class OptInPluginFunctionalTest {
 
         assertThat(res.output)
             .contains("HelloWorld.java:9: error: Undeclared optionality: Marker")
+            .contains("HelloWorld.java:15: error: Undeclared optionality: SubtypingMarker")
     }
 
     @Test
