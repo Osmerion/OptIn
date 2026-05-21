@@ -32,11 +32,15 @@ In general:
 
 Options are passed to the annotation processor as standard annotation processor arguments using the -A flag:
 
-    -A<key>=<url-encoded-value>[,<url-encoded-value>]*
+```
+-A<key>=<url-encoded-value>[,<url-encoded-value>]*
+```
 
 For example, to register a global opt-in:
 
-    -Acom.osmerion.optin.OptIn=com.example.MyMarker
+```
+-Acom.osmerion.optin.OptIn=com.example.MyMarker
+```
 
 
 ### Compiler Plugin Configuration
@@ -44,11 +48,15 @@ For example, to register a global opt-in:
 Options are passed to the javac compiler plugin via -Xplugin. The plugin name is optIn, followed by space-separated 
 key=value pairs:
 
-    -Xplugin:optIn [<key>=<url-encoded-value>[,<url-encoded-value>]*]*
+```
+-Xplugin:optIn [<key>=<url-encoded-value>[,<url-encoded-value>]*]*
+```
 
 For example, to register a global opt-in:
 
-    -Xplugin:optIn com.osmerion.optin.OptIn=com.example.MyMarker
+```
+-Xplugin:optIn com.osmerion.optin.OptIn=com.example.MyMarker
+```
 
 > **Important:** Both the annotation processor argument (via `-A`) and the compiler plugin argument (via `-Xplugin`)
 > must be provided with identical values. Mismatches between the two will result in incorrect behaviour.
