@@ -66,6 +66,11 @@ tasks {
             jvmTarget = JvmTarget.JVM_17
         }
     }
+
+    test {
+        systemProperty("TEST_REPOSITORY",  rootProject.layout.buildDirectory.dir("functional-test-repo").get().asFile.absolutePath)
+        systemProperty("PROJECT_VERSION",  "${project.version}")
+    }
 }
 
 dependencies {

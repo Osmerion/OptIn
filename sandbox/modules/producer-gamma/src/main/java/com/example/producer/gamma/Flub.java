@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Leon Linhart
+ * Copyright 2022-2026 Leon Linhart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.osmerion.optin.tools.apt.internal;
+package com.example.producer.gamma;
 
-import javax.lang.model.type.TypeMirror;
-import java.util.Objects;
+import com.osmerion.optin.OptIn;
 
-public final class UnknownTypeException extends RuntimeException {
+@OptIn(KotlinMarker.class)
+public interface Flub {
 
-    private final TypeMirror type;
-
-    public UnknownTypeException(TypeMirror type) {
-        this.type = Objects.requireNonNull(type);
-    }
-
-    public TypeMirror getType() {
-        return this.type;
-    }
+    MarkedKotlinClass foo();
 
 }

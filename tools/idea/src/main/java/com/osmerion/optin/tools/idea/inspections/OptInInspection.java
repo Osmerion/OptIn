@@ -15,14 +15,21 @@
  */
 package com.osmerion.optin.tools.idea.inspections;
 
-import com.intellij.codeInspection.LocalInspectionTool;
-import com.intellij.codeInspection.ProblemHighlightType;
-import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.codeInsight.intention.FileModifier;
+import com.intellij.codeInspection.*;
+import com.intellij.codeInspection.util.IntentionFamilyName;
+import com.intellij.codeInspection.util.IntentionName;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
+import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.osmerion.optin.tools.idea.OptInBundle;
 import com.osmerion.optin.tools.idea.markers.RequirementAnnotation;
 import com.osmerion.optin.tools.idea.psi.PsiOptInUtil;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -101,17 +108,142 @@ public final class OptInInspection extends LocalInspectionTool {
                         case ERROR -> ProblemHighlightType.GENERIC_ERROR;
                     };
 
-                    // TODO implement quick fixes
+                    List<LocalQuickFix> fixes = new ArrayList<>(4);
 
-                    holder.registerProblem(
+                    PsiMethod enclosingMethod = PsiTreeUtil.getParentOfType(target, PsiMethod.class);
+                    PsiClass enclosingClass = PsiTreeUtil.getParentOfType(target, PsiClass.class);
+                    while (enclosingClass instanceof PsiAnonymousClass) {
+                        enclosingClass = PsiTreeUtil.getParentOfType(enclosingClass, PsiClass.class);
+                    }
+
+                    while (enclosingMethod != null) {
+                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), enclosingMethod.getName(), enclosingMethod));
+                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), enclosingMethod.getName(), enclosingMethod));
+                        enclosingMethod = PsiTreeUtil.getParentOfType(enclosingMethod, PsiMethod.class);
+                    }
+
+                    while (enclosingClass != null) {
+                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), enclosingClass.getName(), enclosingClass));
+                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), enclosingClass.getName(), enclosingClass));
+                        enclosingClass = PsiTreeUtil.getParentOfType(enclosingClass, PsiClass.class);
+                    }
+
+                    this.holder.registerProblem(
                         target,
                         requirement.message(),
-                        highlightType
+                        highlightType,
+                        fixes.toArray(LocalQuickFix[]::new)
                     );
                 }
             }
         }
 
+    }
+
+    private static final class AddOptInFix implements LocalQuickFix {
+
+        private static final String FAMILY = OptInBundle.message("inspection.opt-in.add-opt-in.quickfix.family");
+
+        private final String markerName, targetName;
+        private final SmartPsiElementPointer<PsiModifierListOwner> target;
+
+        private AddOptInFix(String markerName, String targetName, PsiModifierListOwner target) {
+            this.markerName = markerName;
+            this.targetName = targetName;
+            this.target = SmartPointerManager.createPointer(target);
+        }
+
+        @Override
+        public void applyFix(Project project, ProblemDescriptor problemDescriptor) {
+            PsiModifierListOwner annotationTarget = this.target.getElement();
+            String annotationText = "com.osmerion.optin.OptIn(" + markerName + ".class)";
+
+            PsiElement result = null;
+            PsiModifierList modifierList = annotationTarget.getModifierList();
+            if (modifierList != null) {
+                result = modifierList.addAnnotation(annotationText);
+            }
+
+            if (result != null) {
+                JavaCodeStyleManager.getInstance(project).shortenClassReferences(result);
+            }
+        }
+
+        @Override
+        public @Nullable FileModifier getFileModifierForPreview(PsiFile target) {
+            PsiModifierListOwner element = this.target.getElement();
+            if (element == null) return null;
+
+            PsiModifierListOwner elementInCopy = PsiTreeUtil.findSameElementInCopy(element, target);
+            return new AddOptInFix(this.markerName, this.targetName, elementInCopy);
+        }
+
+        @Override
+        public @IntentionFamilyName String getFamilyName() {
+            return FAMILY;
+        }
+
+        @Override
+        public @IntentionName String getName() {
+            String simpleMarkerName = this.markerName.substring(this.markerName.lastIndexOf('.') + 1);
+            return OptInBundle.message("inspection.opt-in.add-opt-in.quickfix.name", simpleMarkerName, this.targetName);
+        }
+
+    }
+
+    private static final class PropagateRequirementFix implements LocalQuickFix {
+
+        private static final String FAMILY = OptInBundle.message("inspection.opt-in.propagate.quickfix.family");
+
+        private final String markerName, targetName;
+        private final SmartPsiElementPointer<PsiModifierListOwner> target;
+
+        private PropagateRequirementFix(String markerName, String targetName, PsiModifierListOwner target) {
+            this.markerName = markerName;
+            this.targetName = targetName;
+            this.target = SmartPointerManager.createPointer(target);
+        }
+
+        @Override
+        public void applyFix(Project project, ProblemDescriptor problemDescriptor) {
+            PsiModifierListOwner annotationTarget = this.target.getElement();
+
+            PsiElement result = null;
+            PsiModifierList modifierList = annotationTarget.getModifierList();
+            if (modifierList != null) {
+                result = modifierList.addAnnotation(this.markerName);
+            }
+
+            if (result != null) {
+                JavaCodeStyleManager.getInstance(project).shortenClassReferences(result);
+            }
+        }
+
+        @Override
+        public @Nullable FileModifier getFileModifierForPreview(PsiFile target) {
+            PsiModifierListOwner element = this.target.getElement();
+            if (element == null) return null;
+
+            PsiModifierListOwner elementInCopy = PsiTreeUtil.findSameElementInCopy(element, target);
+            return new AddOptInFix(this.markerName, this.targetName, elementInCopy);
+        }
+
+        @Override
+        public @IntentionFamilyName String getFamilyName() {
+            return FAMILY;
+        }
+
+        @Override
+        public @IntentionName String getName() {
+            String simpleMarkerName = this.markerName.substring(this.markerName.lastIndexOf('.') + 1);
+            return OptInBundle.message("inspection.opt-in.propagate.quickfix.name", simpleMarkerName, this.targetName);
+        }
+
+    }
+
+    private enum FixTarget {
+        METHOD,
+        TYPE
     }
 
 }
