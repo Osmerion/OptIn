@@ -98,6 +98,16 @@ public final class OptInInspectionTest extends LightJavaCodeInsightFixtureTestCa
         doTest("UnsatisfiedRequirement4", 8, OptInBundle.message("inspection.opt-in.propagate.quickfix.name", "MyMarker", "UnsatisfiedRequirement"));
     }
 
+    public void testUnsatisfiedRequirement5() {
+        doTest("UnsatisfiedRequirement5", 1, OptInBundle.message("inspection.opt-in.add-opt-in.quickfix.name", "MyMarker", "eat"));
+        doTest("UnsatisfiedRequirement5", 2, OptInBundle.message("inspection.opt-in.add-opt-in.quickfix.name", "MyMarker", "Dog"));
+        doTest("UnsatisfiedRequirement5", 3, OptInBundle.message("inspection.opt-in.add-opt-in.quickfix.name", "MyMarker", "UnsatisfiedRequirement"));
+
+        doTest("UnsatisfiedRequirement5", 4, OptInBundle.message("inspection.opt-in.propagate.quickfix.name", "MyMarker", "eat"));
+        doTest("UnsatisfiedRequirement5", 5, OptInBundle.message("inspection.opt-in.propagate.quickfix.name", "MyMarker", "Dog"));
+        doTest("UnsatisfiedRequirement5", 6, OptInBundle.message("inspection.opt-in.propagate.quickfix.name", "MyMarker", "UnsatisfiedRequirement"));
+    }
+
     private void doTest(String testName, int x, String quickFix) {
         this.myFixture.configureByFile(testName + ".java");
         assertThat(this.myFixture.doHighlighting())

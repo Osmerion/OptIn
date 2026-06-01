@@ -28,10 +28,8 @@ import com.osmerion.optin.tools.idea.markers.RequirementAnnotation;
 import com.osmerion.optin.tools.idea.psi.PsiOptInUtil;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * An inspection that verifies that opt-in requirements are met.
@@ -74,6 +72,16 @@ public final class OptInInspection extends LocalInspectionTool {
         }
 
         @Override
+        public void visitMethod(PsiMethod method) {
+            Set<? extends RequirementAnnotation> requirements = Arrays.stream(method.findSuperMethods())
+                .flatMap(superMethod -> PsiOptInUtil.findAllRequirements(superMethod).stream())
+                    .collect(Collectors.toUnmodifiableSet());
+
+            Map<String, ? extends Object> consents = PsiOptInUtil.findAllConsent(method);
+            this.report(method, requirements, consents);
+        }
+
+        @Override
         public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
             if (PsiTreeUtil.getParentOfType(reference, PsiImportStatementBase.class) != null) return;
             if (PsiTreeUtil.getParentOfType(reference, PsiPackage.class) != null) return;
@@ -110,22 +118,22 @@ public final class OptInInspection extends LocalInspectionTool {
 
                     List<LocalQuickFix> fixes = new ArrayList<>(4);
 
-                    PsiMethod enclosingMethod = PsiTreeUtil.getParentOfType(target, PsiMethod.class);
-                    PsiClass enclosingClass = PsiTreeUtil.getParentOfType(target, PsiClass.class);
-                    while (enclosingClass instanceof PsiAnonymousClass) {
-                        enclosingClass = PsiTreeUtil.getParentOfType(enclosingClass, PsiClass.class);
+                    PsiMethod targetMethod = target instanceof PsiMethod method ? method : PsiTreeUtil.getParentOfType(target, PsiMethod.class);
+                    PsiClass targetClass = target instanceof PsiClass cls ? cls : PsiTreeUtil.getParentOfType(target, PsiClass.class);
+                    while (targetClass instanceof PsiAnonymousClass) {
+                        targetClass = PsiTreeUtil.getParentOfType(targetClass, PsiClass.class);
                     }
 
-                    while (enclosingMethod != null) {
-                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), enclosingMethod.getName(), enclosingMethod));
-                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), enclosingMethod.getName(), enclosingMethod));
-                        enclosingMethod = PsiTreeUtil.getParentOfType(enclosingMethod, PsiMethod.class);
+                    while (targetMethod != null) {
+                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), targetMethod.getName(), targetMethod));
+                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), targetMethod.getName(), targetMethod));
+                        targetMethod = PsiTreeUtil.getParentOfType(targetMethod, PsiMethod.class);
                     }
 
-                    while (enclosingClass != null) {
-                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), enclosingClass.getName(), enclosingClass));
-                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), enclosingClass.getName(), enclosingClass));
-                        enclosingClass = PsiTreeUtil.getParentOfType(enclosingClass, PsiClass.class);
+                    while (targetClass != null) {
+                        fixes.add(new AddOptInFix(requirement.fqMarkerName(), targetClass.getName(), targetClass));
+                        fixes.add(new PropagateRequirementFix(requirement.fqMarkerName(), targetClass.getName(), targetClass));
+                        targetClass = PsiTreeUtil.getParentOfType(targetClass, PsiClass.class);
                     }
 
                     this.holder.registerProblem(
@@ -239,11 +247,6 @@ public final class OptInInspection extends LocalInspectionTool {
             return OptInBundle.message("inspection.opt-in.propagate.quickfix.name", simpleMarkerName, this.targetName);
         }
 
-    }
-
-    private enum FixTarget {
-        METHOD,
-        TYPE
     }
 
 }
