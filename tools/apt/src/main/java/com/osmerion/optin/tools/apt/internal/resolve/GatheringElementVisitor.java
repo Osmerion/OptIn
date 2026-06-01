@@ -55,6 +55,7 @@ public final class GatheringElementVisitor extends SimpleElementVisitor14<Void, 
         Element currentElement = element;
 
         do {
+            @SuppressWarnings("unchecked")
             Set<? extends RequirementAnnotation> res = (Set<? extends RequirementAnnotation>) this.getAllConsentAnnotations(currentElement)
                 .stream().filter(it -> it instanceof RequirementAnnotation)
                 .collect(Collectors.toUnmodifiableSet());
