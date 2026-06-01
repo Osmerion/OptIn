@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 import static com.osmerion.optin.tools.apt.compiler.Assertions.assertThat;
 
-public class FieldTest extends AbstractFunctionalTest {
+final class FieldTest extends AbstractFunctionalTest {
 
     private static Stream<Arguments> provideCompilers() {
         return Stream.of(

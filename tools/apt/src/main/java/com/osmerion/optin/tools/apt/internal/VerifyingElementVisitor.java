@@ -127,7 +127,11 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
         context = context.withAnnotations(annotations);
 
         /* 2. Verify the requirements. */
-        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = this.processingContext.verifyTree(element, context);
+        Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements = Stream.concat(
+            this.processingContext.verifyTree(element, context).stream(),
+            this.verifyOverriddenElements(context, element).stream()
+        )
+            .collect(Collectors.toUnmodifiableSet());
 
         @SuppressWarnings("unchecked")
         Set<? extends OptInAnnotation> unusedOptIns = (Set<? extends OptInAnnotation>) annotations.stream()
@@ -138,9 +142,6 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
         for (OptInAnnotation optInAnnotation : unusedOptIns) {
             this.processingContext.report(context, Diagnostic.Kind.WARNING, "unused opt-in: " + optInAnnotation.fqMarkerName(), element, optInAnnotation.mirror());
         }
-
-        /* 3. Additionally, check overridden elements. */
-        this.verifyOverriddenElements(context, element);
 
         return unclaimedSatisfiedRequirements.stream()
             .filter(requirement -> annotations.stream().noneMatch(consentAnnotation -> consentAnnotation.satisfies(requirement)))
@@ -315,7 +316,50 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
         }
     }
 
-    private void verifyOverriddenElements(VerificationContext context, ExecutableElement element) {
+
+    private Set<? extends RequirementAnnotation> collectAllRequirementsFromOverriddenElements(ExecutableElement element) {
+        Queue<TypeElement> typeElements = new ArrayDeque<>();
+
+        Element enclosingElement = element.getEnclosingElement();
+        if (!(enclosingElement instanceof TypeElement enclosingTypeElement)) return Set.of();
+
+        typeElements.add(enclosingTypeElement);
+
+        while (!typeElements.isEmpty()) {
+            TypeElement typeElement = typeElements.poll();
+
+            for (Element enclosedElement : typeElement.getEnclosedElements()) {
+                if (enclosedElement.getKind() != ElementKind.METHOD) continue;
+
+                ExecutableElement executableElement = (ExecutableElement) enclosedElement;
+
+                if (this.elements.overrides(element, executableElement, enclosingTypeElement)) {
+                    return this.processingContext.getAllUsageRequirements(executableElement);
+                }
+            }
+
+            TypeMirror superTypeMirror = typeElement.getSuperclass();
+            if (superTypeMirror.getKind() != TypeKind.NONE) {
+                Element superElement = this.types.asElement(superTypeMirror);
+                if (!(superElement instanceof TypeElement superTypeElement)) throw new IllegalStateException();
+
+                typeElements.add(superTypeElement);
+            }
+
+            for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
+                Element interfaceElement = this.types.asElement(interfaceMirror);
+                if (!(interfaceElement instanceof TypeElement interfaceTypeElement)) throw new IllegalStateException();
+
+                typeElements.add(interfaceTypeElement);
+            }
+        }
+
+        return Set.of();
+    }
+
+    private Set<? extends RequirementAnnotation> verifyOverriddenElements(VerificationContext context, ExecutableElement element) {
+        Set<RequirementAnnotation> unclaimedSatisfiedRequirements = new HashSet<>();
+
         Element enclosingElement = element.getEnclosingElement();
         if (enclosingElement instanceof TypeElement enclosingTypeElement) {
             Set<TypeElement> visitedTypeElements = new HashSet<>();
@@ -332,7 +376,7 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
                     if (!this.elements.overrides(element, enclosedExecutableElement, enclosingTypeElement)) continue;
 
                     Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(enclosedElement);
-                    this.processingContext.reportUnsatisfiedRequirements(context, requirements, this.trees.getTree(element));
+                    unclaimedSatisfiedRequirements.addAll(this.processingContext.reportUnsatisfiedRequirements(context, requirements, this.trees.getTree(element)));
 
                     continue outer;
                 }
@@ -340,15 +384,17 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
                 TypeMirror superclassMirror = typeElement.getSuperclass();
                 if (superclassMirror.getKind() != TypeKind.NONE) {
                     TypeElement superclassElement = this.elements.getTypeElement(superclassMirror.toString());
-                    visitedTypeElements.add(superclassElement);
+                    typeElements.add(superclassElement);
                 }
 
                 for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
                     TypeElement interfaceElement = this.elements.getTypeElement(interfaceMirror.toString());
-                    visitedTypeElements.add(interfaceElement);
+                    typeElements.add(interfaceElement);
                 }
             }
         }
+
+        return Set.copyOf(unclaimedSatisfiedRequirements);
     }
 
 }
