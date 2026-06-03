@@ -170,7 +170,7 @@ jobs:
 
   ghp-release:
     name: Release Documentation to GitHub Pages
-    needs: [build-docs, central-release]
+    needs: [build-docs, gpp-release]
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -185,7 +185,7 @@ jobs:
 
   central-release:
     name: Release to Central Portal
-    needs: [central-upload, gpp-release]
+    needs: [central-upload, ghp-release, gpp-release]
     runs-on: ubuntu-latest
     steps:
       - name: Release to Central Portal
