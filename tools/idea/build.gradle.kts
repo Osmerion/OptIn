@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import okio.Path.Companion.toPath
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdea
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaCommunity
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
@@ -70,6 +71,12 @@ tasks {
     test {
         systemProperty("TEST_REPOSITORY",  rootProject.layout.buildDirectory.dir("functional-test-repo").get().asFile.absolutePath)
         systemProperty("PROJECT_VERSION",  "${project.version}")
+    }
+
+    signPlugin {
+        certificateChainFile = layout.file(providers.gradleProperty("osmerion.intellij.cert").map { it.toPath().toFile() })
+        privateKeyFile = layout.file(providers.gradleProperty("osmerion.intellij.key").map { it.toPath().toFile() })
+        password = providers.gradleProperty("osmerion.intellij.password")
     }
 }
 
