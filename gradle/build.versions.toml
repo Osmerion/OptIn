@@ -41,7 +41,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 [plugins]
 # com.github.gmazzo.buildconfig - gradle-buildconfig-plugin
 # https://github.com/gmazzo/gradle-buildconfig-plugin
-gradle-buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.9" }
+gradle-buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.10" }
 
 # com.gradle.plugin-publish - plugin-publish
 plugin-publish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
