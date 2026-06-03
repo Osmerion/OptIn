@@ -170,32 +170,18 @@ jobs:
 
   ghp-release:
     name: Release Documentation to GitHub Pages
-    needs: gpp-release
+    needs: [build-docs, central-release]
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - name: Checkout
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: ${{ env.DOCS_BUNDLE_ARTIFACT }}
-          path: .
-
-      - name: Unpack git bundle
-        run: |
-          git fetch ${{ env.DOCS_BUNDLE }} gh-pages:gh-pages
-          git switch --force gh-pages
-
-      - name: Configure git
-        run: |
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-      - name: Push to GH Pages
-        run: git push origin gh-pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
 
   central-release:
     name: Release to Central Portal
@@ -208,17 +194,3 @@ jobs:
           username: ${{ secrets.CENTRAL_PORTAL_USERNAME }}
           password: ${{ secrets.CENTRAL_PORTAL_PASSWORD }}
           deployment-id: ${{ needs.central-upload.outputs.deployment-id }}
-
-  deploy:
-    needs: [central-release]
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
