@@ -18,6 +18,13 @@ plugins {
     signing
 }
 
+pluginManager.withPlugin("java-base") {
+    extensions.configure<JavaPluginExtension> {
+        withJavadocJar()
+        withSourcesJar()
+    }
+}
+
 publishing {
     publications.withType<MavenPublication>().configureEach {
         pom {
