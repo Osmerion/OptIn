@@ -52,4 +52,4 @@ While the core aspects of the API and specification are unlikely to change, ther
 and - presumably - issues to discover. We need your feedback now to finalize the specification! Please consider trying
 out opt-in.
 
-[Learn more!](https://osmerion.github.io/OptIn/docs/start-here.md)
+[Learn more!](https://osmerion.github.io/OptIn/docs/start-here)
