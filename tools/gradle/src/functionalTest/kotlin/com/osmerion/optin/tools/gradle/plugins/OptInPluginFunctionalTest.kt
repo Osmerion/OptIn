@@ -39,6 +39,27 @@ class OptInPluginFunctionalTest {
     }
 
     @Test
+    fun testExtraRequirement_Orekit_OptIn() {
+        test("test-extra-requirement-orekit-optin")
+            .build()
+    }
+
+    @Test
+    fun testExtraRequirement_Orekit_Propagation() {
+        test("test-extra-requirement-orekit-propagation")
+            .build()
+    }
+
+    @Test
+    fun testExtraRequirement_Orekit_Unsatisfied() {
+        val res = test("test-extra-requirement-orekit-unsatisfied")
+            .buildAndFail()
+
+        assertThat(res.output)
+            .contains("HelloWorld.java:6: error: Undeclared optionality: org.orekit.annotation.DefaultDataContext")
+    }
+
+    @Test
     fun testExtraRequirement_Satisfied() {
         test("test-extra-requirement-satisfied")
             .build()
