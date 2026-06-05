@@ -316,47 +316,6 @@ final class VerifyingElementVisitor extends AbstractElementVisitor14<Set<? exten
         }
     }
 
-
-    private Set<? extends RequirementAnnotation> collectAllRequirementsFromOverriddenElements(ExecutableElement element) {
-        Queue<TypeElement> typeElements = new ArrayDeque<>();
-
-        Element enclosingElement = element.getEnclosingElement();
-        if (!(enclosingElement instanceof TypeElement enclosingTypeElement)) return Set.of();
-
-        typeElements.add(enclosingTypeElement);
-
-        while (!typeElements.isEmpty()) {
-            TypeElement typeElement = typeElements.poll();
-
-            for (Element enclosedElement : typeElement.getEnclosedElements()) {
-                if (enclosedElement.getKind() != ElementKind.METHOD) continue;
-
-                ExecutableElement executableElement = (ExecutableElement) enclosedElement;
-
-                if (this.elements.overrides(element, executableElement, enclosingTypeElement)) {
-                    return this.processingContext.getAllUsageRequirements(executableElement);
-                }
-            }
-
-            TypeMirror superTypeMirror = typeElement.getSuperclass();
-            if (superTypeMirror.getKind() != TypeKind.NONE) {
-                Element superElement = this.types.asElement(superTypeMirror);
-                if (!(superElement instanceof TypeElement superTypeElement)) throw new IllegalStateException();
-
-                typeElements.add(superTypeElement);
-            }
-
-            for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
-                Element interfaceElement = this.types.asElement(interfaceMirror);
-                if (!(interfaceElement instanceof TypeElement interfaceTypeElement)) throw new IllegalStateException();
-
-                typeElements.add(interfaceTypeElement);
-            }
-        }
-
-        return Set.of();
-    }
-
     private Set<? extends RequirementAnnotation> verifyOverriddenElements(VerificationContext context, ExecutableElement element) {
         Set<RequirementAnnotation> unclaimedSatisfiedRequirements = new HashSet<>();
 
