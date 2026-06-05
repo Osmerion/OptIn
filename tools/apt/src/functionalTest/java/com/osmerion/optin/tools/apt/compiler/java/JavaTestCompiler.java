@@ -34,7 +34,7 @@ public final class JavaTestCompiler implements TestCompiler {
     @Override
     public Compilation compile(SourceFile... sources) {
         com.google.testing.compile.Compiler compiler = com.google.testing.compile.Compiler.javac()
-            .withOptions("--release", 17, "-Xplugin:optIn")
+            .withOptions("--release", 17, "-Xplugin:optIn com.osmerion.optin.RequiresOptIn=com.example.producer.alpha.ExternalAlphaMarker%2CERROR")
             .withProcessors(new OptInProcessor());
 
         if (useModulePath) {

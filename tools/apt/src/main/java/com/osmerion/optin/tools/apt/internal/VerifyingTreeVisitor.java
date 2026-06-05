@@ -128,12 +128,17 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
     @Override
     public Set<? extends RequirementAnnotation> visitMemberSelect(MemberSelectTree node, VerificationContext context) {
         TreePath path = this.getCurrentPath();
+
+        Element element = this.trees.getElement(path);
         TypeMirror typeMirror = this.trees.getTypeMirror(path);
 
         Set<? extends RequirementAnnotation> unclaimedSatisfiedRequirements;
 
-        if (typeMirror != null) {
-            Set<? extends RequirementAnnotation> requirements = this.processingContext.getAllUsageRequirements(typeMirror);
+        if (element != null) {
+            Set<? extends RequirementAnnotation> requirements = Stream.concat(
+                this.processingContext.getAllUsageRequirements(element).stream(),
+                this.processingContext.getAllUsageRequirements(typeMirror).stream()
+            ).collect(Collectors.toSet());
             unclaimedSatisfiedRequirements = this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
             context = context.withAnnotations(requirements);
         } else {

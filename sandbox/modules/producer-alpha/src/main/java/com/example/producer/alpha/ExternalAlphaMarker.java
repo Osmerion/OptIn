@@ -15,24 +15,9 @@
  */
 package com.example.producer.alpha;
 
-public class UnmarkedClass {
+import java.lang.annotation.*;
 
-    @AlphaMarker
-    public void marked() {}
-
-    @ExternalAlphaMarker
-    public static void markedWithExtraMarker() {}
-
-    public void unmarked() {}
-
-    @AlphaMarker
-    public class MarkedInnerClass {
-
-    }
-
-    @AlphaMarker
-    public static class MarkedNestedClass {
-
-    }
-
-}
+@Documented
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+public @interface ExternalAlphaMarker {}
