@@ -23,6 +23,13 @@ tasks {
     compileJava {
         options.javaModuleVersion = "$version"
     }
+
+    register<Sync>("copyDocs") {
+        description = "Copies the JavaDoc into the build output of the docs site"
+
+        from(javadoc)
+        into(rootProject.layout.projectDirectory.dir("docs/site/build/docs/api"))
+    }
 }
 
 publishing {

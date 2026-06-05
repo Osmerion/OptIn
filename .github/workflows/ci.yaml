@@ -71,6 +71,9 @@ jobs:
         working-directory: ./docs/site
         run: yarn build
 
+      - name: Copy JavaDoc
+        run: ./gradlew copyDocs --info -S --show-version
+
   check:
     name: Check
     needs: build
