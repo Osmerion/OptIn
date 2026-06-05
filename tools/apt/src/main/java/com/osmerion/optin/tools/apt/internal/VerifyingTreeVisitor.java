@@ -165,6 +165,25 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
     }
 
     @Override
+    public Set<? extends RequirementAnnotation> visitMemberReference(MemberReferenceTree node, VerificationContext context) {
+        TreePath path = this.getCurrentPath();
+        if (path == null) return Set.of();
+
+        Element element = this.trees.getElement(path);
+
+        Set<? extends RequirementAnnotation> requirements;
+        if (element != null) {
+            requirements = this.processingContext.getAllUsageRequirements(element);
+            this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
+        } else {
+            requirements = Set.of();
+        }
+
+        return Stream.concat(requirements.stream(), super.visitMemberReference(node, context).stream())
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
     public Set<? extends RequirementAnnotation> visitNewClass(NewClassTree node, VerificationContext context) {
         TreePath path = this.getCurrentPath();
         if (path == null) return Set.of();

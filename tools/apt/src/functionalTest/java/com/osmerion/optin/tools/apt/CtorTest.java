@@ -25,31 +25,6 @@ import static com.osmerion.optin.tools.apt.compiler.Assertions.assertThat;
 final class CtorTest extends AbstractFunctionalTest {
 
     @Test
-    void testCtor_Undeclared() {
-        SourceFile cls = createJavaFile(
-            "com.example.TestClass",
-            """
-            package com.example;
-            
-            import com.example.producer.alpha.*;
-            
-            public class TestClass {
-            
-                void bar() {
-                    new UnmarkedClassWithMarkerCtor();
-                }
-            
-            }
-            """
-        );
-
-        TestCompiler compiler = Compilers.javac();
-        assertThat(compiler.compile(cls))
-            .hasFailed()
-            .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
-    }
-
-    @Test
     void testCtor_OptIn() {
         SourceFile cls = createJavaFile(
             "com.example.TestClass",
@@ -89,6 +64,110 @@ final class CtorTest extends AbstractFunctionalTest {
                 @AlphaMarker
                 void bar() {
                     new UnmarkedClassWithMarkerCtor();
+                }
+            
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(cls))
+            .hasSucceeded();
+    }
+
+    @Test
+    void testCtor_Undeclared() {
+        SourceFile cls = createJavaFile(
+            "com.example.TestClass",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            
+            public class TestClass {
+            
+                void bar() {
+                    new UnmarkedClassWithMarkerCtor();
+                }
+            
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(cls))
+            .hasFailed()
+            .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
+    }
+
+    @Test
+    void testCtorRef_Undeclared() {
+        SourceFile cls = createJavaFile(
+            "com.example.TestClass",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            import java.util.function.Supplier;
+            
+            public class TestClass {
+            
+                void bar() {
+                    Supplier<?> x = UnmarkedClassWithMarkerCtor::new;
+                }
+            
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(cls))
+            .hasFailed()
+            .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
+    }
+
+    @Test
+    void testCtorRef_OptIn() {
+        SourceFile cls = createJavaFile(
+            "com.example.TestClass",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            import com.osmerion.optin.*;
+            import java.util.function.Supplier;
+            
+            public class TestClass {
+            
+                @OptIn(AlphaMarker.class)
+                void bar() {
+                    Supplier<?> x = UnmarkedClassWithMarkerCtor::new;
+                }
+            
+            }
+            """
+        );
+
+        TestCompiler compiler = Compilers.javac();
+        assertThat(compiler.compile(cls))
+            .hasSucceeded();
+    }
+
+    @Test
+    void testCtorRef_Propagation() {
+        SourceFile cls = createJavaFile(
+            "com.example.TestClass",
+            """
+            package com.example;
+            
+            import com.example.producer.alpha.*;
+            import java.util.function.Supplier;
+            
+            public class TestClass {
+            
+                @AlphaMarker
+                void bar() {
+                    Supplier<?> x = UnmarkedClassWithMarkerCtor::new;
                 }
             
             }
