@@ -103,7 +103,7 @@ const config: Config = {
           label: 'Start Here',
         },
         {
-          href: 'https://osmerion.github.io/OptIn/docs/api/com.osmerion.optin/module-summmary.html',
+          href: 'https://osmerion.github.io/OptIn/docs/api/com.osmerion.optin/module-summary.html',
           label: 'Javadoc',
           position: 'left',
         },
@@ -131,7 +131,7 @@ const config: Config = {
             },
             {
               label: 'JavaDoc',
-              href: 'https://osmerion.github.io/OptIn/docs/api/com.osmerion.optin/module-summmary.html',
+              href: 'https://osmerion.github.io/OptIn/docs/api/com.osmerion.optin/module-summary.html',
             },
             {
               label: 'Specification',
