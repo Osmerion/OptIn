@@ -199,6 +199,7 @@ final class VerifyingTreeVisitor extends TreePathScanner<@Nullable Set<? extends
         if (element != null) {
             requirements = this.processingContext.getAllUsageRequirements(element);
             this.processingContext.reportUnsatisfiedRequirements(context, requirements, node);
+            context = context.withAnnotations(requirements);
         } else {
             requirements = Set.of();
         }
