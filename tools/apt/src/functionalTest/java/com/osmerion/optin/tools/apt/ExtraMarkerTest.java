@@ -46,7 +46,7 @@ final class ExtraMarkerTest extends AbstractFunctionalTest {
         TestCompiler compiler = Compilers.javac();
         assertThat(compiler.compile(cls))
             .hasFailed()
-            .hasErrorContaining("Undeclared optionality: com.example.producer.alpha.AlphaMarker");
+            .hasErrorContaining("TestClass.java:8: error: Undeclared optionality: com.example.producer.alpha.ExternalAlphaMarker");
     }
 
 }
