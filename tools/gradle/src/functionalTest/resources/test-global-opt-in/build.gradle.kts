@@ -33,5 +33,5 @@ repositories {
 }
 
 dependencies {
-    implementation("com.osmerion.optin:opt-in:0.1.0")
+    implementation("com.osmerion.optin:opt-in:0.1.1")
 }
