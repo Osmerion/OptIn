@@ -15,7 +15,7 @@
  */
 plugins {
     id("com.osmerion.java-base-conventions")
-    id("com.osmerion.opt-in") version "0.1.0"
+    id("com.osmerion.opt-in") version "0.1.1"
     `java-library`
 }
 
