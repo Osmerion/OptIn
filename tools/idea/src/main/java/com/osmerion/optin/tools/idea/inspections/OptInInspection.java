@@ -19,6 +19,9 @@ import com.intellij.codeInsight.intention.FileModifier;
 import com.intellij.codeInspection.*;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.codeInspection.util.IntentionName;
+import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.JavaCodeStyleManager;
@@ -26,6 +29,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.osmerion.optin.tools.idea.OptInBundle;
 import com.osmerion.optin.tools.idea.markers.RequirementAnnotation;
 import com.osmerion.optin.tools.idea.psi.PsiOptInUtil;
+import com.osmerion.optin.tools.idea.util.Configuration;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
@@ -40,15 +44,23 @@ public final class OptInInspection extends LocalInspectionTool {
 
     @Override
     public PsiElementVisitor buildVisitor(ProblemsHolder holder, boolean isOnTheFly) {
-        return new OptInVisitor(holder);
+        Project project = holder.getProject();
+        Module module = ModuleUtil.findModuleForPsiElement(holder.getFile());
+
+        CompilerConfiguration compilerConfiguration = CompilerConfiguration.getInstance(project);
+        Configuration configuration = Configuration.parse(compilerConfiguration.getAdditionalOptions(module));
+
+        return new OptInVisitor(holder, configuration);
     }
 
     private static class OptInVisitor extends JavaElementVisitor {
 
         private final ProblemsHolder holder;
+        private final Configuration configuration;
 
-        private OptInVisitor(ProblemsHolder holder) {
+        private OptInVisitor(ProblemsHolder holder, Configuration configuration) {
             this.holder = holder;
+            this.configuration = configuration;
         }
 
         @Override
@@ -64,20 +76,20 @@ public final class OptInInspection extends LocalInspectionTool {
         }
 
         private void verifySubtypingRequirements(PsiClass aClass, PsiClass superTypeClass) {
-            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findSubtypingRequirements(superTypeClass);
+            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findSubtypingRequirements(superTypeClass, this.configuration);
             if (requirements.isEmpty()) return;
 
-            Map<String, ? extends Object> consents = PsiOptInUtil.findAllConsent(aClass);
+            Set<String> consents = PsiOptInUtil.findAllConsent(aClass, this.configuration);
             this.report(aClass, requirements, consents);
         }
 
         @Override
         public void visitMethod(PsiMethod method) {
             Set<? extends RequirementAnnotation> requirements = Arrays.stream(method.findSuperMethods())
-                .flatMap(superMethod -> PsiOptInUtil.findAllRequirements(superMethod).stream())
+                .flatMap(superMethod -> PsiOptInUtil.findAllRequirements(superMethod, this.configuration).stream())
                     .collect(Collectors.toUnmodifiableSet());
 
-            Map<String, ? extends Object> consents = PsiOptInUtil.findAllConsent(method);
+            Set<String> consents = PsiOptInUtil.findAllConsent(method, this.configuration);
             this.report(method, requirements, consents);
         }
 
@@ -89,10 +101,10 @@ public final class OptInInspection extends LocalInspectionTool {
             PsiElement target = reference.resolve();
             if (target == null) return;
 
-            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findAllRequirements(target);
+            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findAllRequirements(target, this.configuration);
             if (requirements.isEmpty()) return;
 
-            Map<String, ? extends Object> consents = PsiOptInUtil.findAllConsent(reference);
+            Set<String> consents = PsiOptInUtil.findAllConsent(reference, this.configuration);
             this.report(reference, requirements, consents);
         }
 
@@ -101,16 +113,16 @@ public final class OptInInspection extends LocalInspectionTool {
             PsiElement target = expression.resolve();
             if (target == null) return;
 
-            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findAllRequirements(target);
+            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findAllRequirements(target, this.configuration);
             if (requirements.isEmpty()) return;
 
-            Map<String, ? extends Object> consents = PsiOptInUtil.findAllConsent(expression);
+            Set<String> consents = PsiOptInUtil.findAllConsent(expression, this.configuration);
             this.report(expression, requirements, consents);
         }
 
-        private void report(PsiElement target, Set<? extends RequirementAnnotation> requirements, Map<String, ?> consents) {
+        private void report(PsiElement target, Set<? extends RequirementAnnotation> requirements, Set<String> consents) {
             for (RequirementAnnotation requirement : requirements) {
-                if (!consents.containsKey(requirement.fqMarkerName())) {
+                if (!consents.contains(requirement.fqMarkerName())) {
                     ProblemHighlightType highlightType = switch (requirement.level()) {
                         case WARNING -> ProblemHighlightType.WARNING;
                         case ERROR -> ProblemHighlightType.GENERIC_ERROR;

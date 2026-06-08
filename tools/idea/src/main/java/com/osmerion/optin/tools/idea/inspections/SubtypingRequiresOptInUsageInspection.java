@@ -18,12 +18,17 @@ package com.osmerion.optin.tools.idea.inspections;
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
+import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.lang.jvm.JvmModifier;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.osmerion.optin.tools.idea.OptInBundle;
 import com.osmerion.optin.tools.idea.OptInConstants;
+import com.osmerion.optin.tools.idea.util.Configuration;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -46,11 +51,17 @@ public final class SubtypingRequiresOptInUsageInspection extends LocalInspection
 
     @Override
     public PsiElementVisitor buildVisitor(ProblemsHolder holder, boolean isOnTheFly) {
+        Project project = holder.getProject();
+        Module module = ModuleUtil.findModuleForPsiElement(holder.getFile());
+
+        CompilerConfiguration compilerConfiguration = CompilerConfiguration.getInstance(project);
+        Configuration configuration = Configuration.parse(compilerConfiguration.getAdditionalOptions(module));
+
         return new JavaElementVisitor() {
 
             @Override
             public void visitClass(PsiClass aClass) {
-                Set<PsiAnnotation> subtypingRequirements = SubtypingRequiresOptInUsageInspection.this.getSubtypingRequirements(aClass);
+                Set<PsiAnnotation> subtypingRequirements = SubtypingRequiresOptInUsageInspection.this.getSubtypingRequirements(aClass, configuration);
                 if (subtypingRequirements.isEmpty()) return;
 
                 switch (aClass.getClassKind()) {
@@ -66,10 +77,10 @@ public final class SubtypingRequiresOptInUsageInspection extends LocalInspection
         };
     }
 
-    private Set<PsiAnnotation> getSubtypingRequirements(PsiClass aClass) {
+    private Set<PsiAnnotation> getSubtypingRequirements(PsiClass aClass, Configuration configuration) {
         return CachedValuesManager.getCachedValue(aClass, () -> {
             Set<PsiAnnotation> annotations = Arrays.stream(aClass.getAnnotations())
-                .filter(annotation -> OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotation.getQualifiedName()))
+                .filter(annotation -> OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotation.getQualifiedName()) || configuration.getExtraSubtypingRequirements().containsKey(annotation.getQualifiedName()))
                 .collect(Collectors.toUnmodifiableSet());
 
             return CachedValueProvider.Result.createSingleDependency(annotations, aClass);

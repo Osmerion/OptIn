@@ -24,6 +24,8 @@ import com.osmerion.optin.tools.idea.OptInConstants;
 import com.osmerion.optin.tools.idea.markers.ConsentAnnotation;
 import com.osmerion.optin.tools.idea.markers.OptInAnnotation;
 import com.osmerion.optin.tools.idea.markers.RequirementAnnotation;
+import com.osmerion.optin.tools.idea.util.Configuration;
+import com.osmerion.optin.tools.idea.util.Level;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.asJava.LightClassUtilsKt;
 import org.jetbrains.kotlin.psi.*;
@@ -115,9 +117,9 @@ public final class PsiOptInUtil {
                 }
             }
 
-            RequirementAnnotation.Level level = switch (levelString) {
-                case "WARNING" -> RequirementAnnotation.Level.WARNING;
-                case "ERROR" -> RequirementAnnotation.Level.ERROR;
+            Level level = switch (levelString) {
+                case "WARNING" -> Level.WARNING;
+                case "ERROR" -> Level.ERROR;
                 default -> null;
             };
 
@@ -129,14 +131,20 @@ public final class PsiOptInUtil {
         return null;
     }
 
-    private static @Nullable RequirementAnnotation deriveSubtypingRequirement(PsiAnnotation annotation) {
-        if (OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotation.getQualifiedName())) {
+    private static @Nullable RequirementAnnotation deriveSubtypingRequirement(PsiAnnotation annotation, Configuration configuration) {
+        String annotationFqName = annotation.getQualifiedName();
+        if (annotationFqName == null) return null;
+
+        if (OptInConstants.SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName)) {
             return deriveSubtypingRequirement(annotation, "value");
-        } else if (OptInConstants.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotation.getQualifiedName())) {
+        } else if (OptInConstants.KOTLIN_SUBTYPING_REQUIRES_OPT_IN_FQ_NAME.equals(annotationFqName)) {
             return deriveSubtypingRequirement(annotation, "markerClass");
         }
 
-        return null;
+        Configuration.ExtraRequiresOptIn extraRequiresOptIn = configuration.getExtraSubtypingRequirements().get(annotationFqName);
+        if (extraRequiresOptIn == null) return null;
+
+        return new RequirementAnnotation(annotationFqName, extraRequiresOptIn.message(), extraRequiresOptIn.level());
     }
 
     private static @Nullable RequirementAnnotation deriveSubtypingRequirement(PsiAnnotation annotation, String markerAttributeName) {
@@ -149,15 +157,15 @@ public final class PsiOptInUtil {
         return deriveRequirementMarker(annotationClass);
     }
 
-    public static Map<String, ? extends Object> findAllConsent(PsiElement element) {
-        HashMap<String, Object> consents = new HashMap<>();
+    public static Set<String> findAllConsent(PsiElement element, Configuration configuration) {
+        Set<String> consents = new HashSet<>();
 
         while (true) {
             if (element instanceof PsiModifierListOwner modifierListOwner) {
                 Arrays.stream(modifierListOwner.getAnnotations())
                     .map(PsiOptInUtil::deriveConsentAnnotation)
                     .filter(Objects::nonNull)
-                    .forEach(consentAnnotation -> consents.put(consentAnnotation.fqMarkerName(), consentAnnotation));
+                    .forEach(consentAnnotation -> consents.add(consentAnnotation.fqMarkerName()));
             }
 
             PsiElement parent = PsiTreeUtil.getParentOfType(element, PsiModifierListOwner.class);
@@ -173,7 +181,7 @@ public final class PsiOptInUtil {
                 Arrays.stream(aPackage.getAnnotations())
                     .map(PsiOptInUtil::deriveConsentAnnotation)
                     .filter(Objects::nonNull)
-                    .forEach(consentAnnotation -> consents.put(consentAnnotation.fqMarkerName(), consentAnnotation));
+                    .forEach(consentAnnotation -> consents.add(consentAnnotation.fqMarkerName()));
             }
 
             PsiJavaModule module = JavaModuleGraphUtil.findDescriptorByElement(file);
@@ -181,20 +189,33 @@ public final class PsiOptInUtil {
                 Arrays.stream(module.getAnnotations())
                     .map(PsiOptInUtil::deriveConsentAnnotation)
                     .filter(Objects::nonNull)
-                    .forEach(consentAnnotation -> consents.put(consentAnnotation.fqMarkerName(), consentAnnotation));
+                    .forEach(consentAnnotation -> consents.add(consentAnnotation.fqMarkerName()));
             }
         }
 
-        return Map.copyOf(consents);
+        consents.addAll(configuration.getGlobalOptIns());
+
+        return Set.copyOf(consents);
     }
 
-    public static Set<? extends RequirementAnnotation> findAllRequirements(PsiElement element) {
+    public static Set<? extends RequirementAnnotation> findAllRequirements(PsiElement element, Configuration configuration) {
         Set<RequirementAnnotation> requirements = new HashSet<>();
 
         while (true) {
             if (element instanceof PsiModifierListOwner modifierListOwner) {
                 Arrays.stream(modifierListOwner.getAnnotations())
-                    .map(PsiOptInUtil::deriveRequirementMarker)
+                    .map(annotationType -> {
+                        RequirementAnnotation requirement = deriveRequirementMarker(annotationType);
+                        if (requirement != null) return requirement;
+
+                        String markerFqName = annotationType.getQualifiedName();
+                        if (markerFqName == null) return null;
+
+                        Configuration.ExtraRequiresOptIn requiresOptIn = configuration.getExtraRequirements().get(markerFqName);
+                        if (requiresOptIn == null) return null;
+
+                        return new RequirementAnnotation(markerFqName, requiresOptIn.message(), requiresOptIn.level());
+                    })
                     .filter(Objects::nonNull)
                     .forEach(requirements::add);
             }
@@ -227,9 +248,9 @@ public final class PsiOptInUtil {
         return Set.copyOf(requirements);
     }
 
-    public static Set<? extends RequirementAnnotation> findSubtypingRequirements(PsiClass aClass) {
+    public static Set<? extends RequirementAnnotation> findSubtypingRequirements(PsiClass aClass, Configuration configuration) {
         return Arrays.stream(aClass.getAnnotations())
-            .map(PsiOptInUtil::deriveSubtypingRequirement)
+            .map(annotation -> deriveSubtypingRequirement(annotation, configuration))
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableSet());
     }

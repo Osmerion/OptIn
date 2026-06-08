@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 public final class Configuration {
 
-    private static final Pattern PATTERN_EXTRA_REQUIREMENT = Pattern.compile("^([^\\s,]+),([^\\s,]+),([^,]+)$");
+    private static final Pattern PATTERN_EXTRA_REQUIREMENT = Pattern.compile("^([^\\s,]+)(?:,([^\\s,]+)(?:,([^,]+))?)?$");
     private static final Pattern PATTERN_PSEUDO_POSITIONAL_ARG = Pattern.compile("(\\S+)=(.+)");
 
     public static final String OPT_OptIn = "com.osmerion.optin.OptIn";
@@ -50,7 +50,14 @@ public final class Configuration {
     }
 
     public static Configuration parse(List<String> args) {
-        Map<String, String> options = args.stream()
+        String[] pluginArgs = args.stream()
+            .filter(it -> it.startsWith("-Xplugin:optIn"))
+            .findAny()
+            .map(it -> it.substring("-Xplugin:optIn".length()).trim())
+            .map(it -> it.split("\\s"))
+            .orElse(new String[0]);
+
+        Map<String, String> options = Arrays.stream(pluginArgs)
             .map(arg -> {
                 Matcher matcher = PATTERN_PSEUDO_POSITIONAL_ARG.matcher(arg);
                 if (!matcher.matches()) {
@@ -85,11 +92,15 @@ public final class Configuration {
         String level = matcher.group(2);
         String message = matcher.group(3);
 
-        Level parsedLevel = switch (level.toLowerCase(Locale.ROOT)) {
+        Level parsedLevel = (level == null) ? Level.ERROR : switch (level.toLowerCase(Locale.ROOT)) {
             case "error" -> Level.ERROR;
             case "warning" -> Level.WARNING;
             default -> throw new IllegalArgumentException("Level '" + level + "' is not valid: Should be one of: ERROR, WARNING (in '" + source + "')");
         };
+
+        if (message == null) {
+            message = "This declaration needs opt-in. Its usage must be marked with '@%s' or '@OptIn(%s.class)".formatted(targetFqName, targetFqName);
+        }
 
         return new ExtraRequiresOptIn(targetFqName, message, parsedLevel);
     }

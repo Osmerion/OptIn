@@ -15,11 +15,6 @@
  */
 package com.osmerion.optin.tools.idea.markers;
 
-public record RequirementAnnotation(String fqMarkerName, String message, Level level) implements ConsentAnnotation {
+import com.osmerion.optin.tools.idea.util.Level;
 
-    public enum Level {
-        WARNING,
-        ERROR
-    }
-
-}
+public record RequirementAnnotation(String fqMarkerName, String message, Level level) implements ConsentAnnotation {}
