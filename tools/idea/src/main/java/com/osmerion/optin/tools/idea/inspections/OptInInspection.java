@@ -94,6 +94,18 @@ public final class OptInInspection extends LocalInspectionTool {
         }
 
         @Override
+        public void visitNewExpression(PsiNewExpression expression) {
+            PsiMethod target = expression.resolveConstructor();
+            if (target == null) return;
+
+            Set<? extends RequirementAnnotation> requirements = PsiOptInUtil.findAllRequirements(target, this.configuration);
+            if (requirements.isEmpty()) return;
+
+            Set<String> consents = PsiOptInUtil.findAllConsent(expression, this.configuration);
+            this.report(expression, requirements, consents);
+        }
+
+        @Override
         public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
             if (PsiTreeUtil.getParentOfType(reference, PsiImportStatementBase.class) != null) return;
             if (PsiTreeUtil.getParentOfType(reference, PsiPackage.class) != null) return;
