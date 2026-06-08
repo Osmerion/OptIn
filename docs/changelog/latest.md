@@ -1,9 +1,14 @@
-### 0.1.0
+### 0.1.1
 
-_Released 2026 Jun 03_
+_Released 2026 Jun 08_
 
-#### Overview
+#### Apt. Fixes
 
-This is the initial public release of the OptIn project.
+- Fixed a bug that caused the verifier to miss constructor invocations in some cases.
+- Fixed a bug that caused the verifier to miss method invocations in some cases.
+- Fixed a bug that caused the verifier to miss method references in some cases.
 
-[Learn more!](https://osmerion.github.io/OptIn)
+#### IDEA. Fixes
+
+- Extra configuration is now taken into account for inspections.
+- Fixed a bug that caused the opt-in inspection to miss constructor invocations.
