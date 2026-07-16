@@ -1,6 +1,6 @@
 [versions]
 junit = "6.1.1"
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 
 
 [libraries]
