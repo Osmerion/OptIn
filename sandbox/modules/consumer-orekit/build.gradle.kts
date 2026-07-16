@@ -30,5 +30,5 @@ sourceSets {
 
 dependencies {
     api("com.osmerion.optin:opt-in")
-    implementation("org.orekit:orekit:13.1.6")
+    implementation("org.orekit:orekit:13.1.7")
 }
