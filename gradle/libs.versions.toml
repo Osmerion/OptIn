@@ -5,4 +5,4 @@ gradle-api = { module = "org.gradle.experimental:gradle-public-api", version = "
 
 # org.jspecify - JSpecify
 # https://github.com/jspecify/jspecify
-jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.1" }
