@@ -34,5 +34,5 @@ repositories {
 
 dependencies {
     implementation("com.osmerion.optin:opt-in:0.1.1")
-    implementation("org.orekit:orekit:13.1.9")
+    implementation("org.orekit:orekit:13.1.10")
 }
